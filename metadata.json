@@ -1,0 +1,5 @@
+{
+  "name": "WikiFlow - SMB Knowledge Management",
+  "description": "A lightweight, AI-powered Knowledge Management System designed for small teams. Features document versioning, role-based access control, and Gemini-powered semantic search and summarization.",
+  "requestFramePermissions": []
+}
