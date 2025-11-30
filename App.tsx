@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import DocumentList from './components/DocumentList';
@@ -8,7 +9,8 @@ import AISearch from './components/AISearch';
 import ProjectBoard from './components/ProjectBoard';
 import { Document, Project, UserRole } from './types';
 import { getDocuments, saveDocument, getCurrentUser, getProjects, saveProject } from './services/storageService';
-import { LayoutDashboard, Users, FileText, Activity, Briefcase, Plus, ArrowRight } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Activity, Briefcase, Plus, ArrowRight, Download } from 'lucide-react';
+import html2canvas from 'html2canvas';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -57,12 +59,40 @@ const App: React.FC = () => {
     setActiveTab('project-view');
   };
 
+  const handleExportDashboard = async () => {
+    const dashboardElement = document.getElementById('dashboard-stats');
+    if (!dashboardElement) return;
+
+    try {
+      const canvas = await html2canvas(dashboardElement, {
+        backgroundColor: '#f8fafc', // match body background
+      });
+      const link = document.createElement('a');
+      link.download = `dashboard-report-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('圖表匯出失敗，請稍後再試。');
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="flex justify-end">
+               <button 
+                 onClick={handleExportDashboard}
+                 className="flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600 font-medium px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-sm"
+               >
+                 <Download className="w-4 h-4" /> 匯出報表
+               </button>
+            </div>
+
+            {/* ID used for html2canvas target */}
+            <div id="dashboard-stats" className="grid grid-cols-1 md:grid-cols-4 gap-4 p-1">
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-slate-500 text-sm font-medium">總文件數</h3>

@@ -1,4 +1,5 @@
 
+
 import { Document, User, UserRole, DocVersion, Project, Task, TaskStatus, TaskPriority } from '../types';
 
 const DOCS_KEY = 'wikiflow_docs';
@@ -23,7 +24,8 @@ const INITIAL_DOCS: Document[] = [
     createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
     updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
     accessLevel: UserRole.VIEWER,
-    history: []
+    history: [],
+    attachments: []
   },
   {
     id: '2',
@@ -35,7 +37,8 @@ const INITIAL_DOCS: Document[] = [
     createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
     updatedAt: new Date(Date.now()).toISOString(),
     accessLevel: UserRole.EDITOR,
-    history: []
+    history: [],
+    attachments: []
   }
 ];
 
@@ -108,7 +111,12 @@ export const getDocuments = (): Document[] => {
     localStorage.setItem(DOCS_KEY, JSON.stringify(INITIAL_DOCS));
     return INITIAL_DOCS;
   }
-  return JSON.parse(data);
+  // Data migration for old documents without attachments
+  const docs = JSON.parse(data);
+  return docs.map((d: Document) => ({
+    ...d,
+    attachments: d.attachments || []
+  }));
 };
 
 export const saveDocument = (doc: Document, user: User): Document => {
@@ -138,7 +146,8 @@ export const saveDocument = (doc: Document, user: User): Document => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       createdBy: user.name,
-      history: []
+      history: [],
+      attachments: doc.attachments || []
     };
     docs.unshift(newDoc);
     localStorage.setItem(DOCS_KEY, JSON.stringify(docs));

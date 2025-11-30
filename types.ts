@@ -21,6 +21,15 @@ export interface DocVersion {
   changeSummary?: string;
 }
 
+export interface Attachment {
+  id: string;
+  name: string;
+  type: string; // MIME type
+  size: number;
+  data: string; // Base64 string
+  uploadedAt: string;
+}
+
 export interface Document {
   id: string;
   title: string;
@@ -32,6 +41,7 @@ export interface Document {
   updatedAt: string; // ISO Date string
   history: DocVersion[];
   accessLevel: UserRole; // Minimum role required to edit
+  attachments?: Attachment[];
 }
 
 export interface SearchResult {

@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Clock, Edit, ArrowLeft, Calendar, Tag, User, ShieldAlert } from 'lucide-react';
+import { Clock, Edit, ArrowLeft, Calendar, Tag, User, ShieldAlert, Paperclip, Download, FileText } from 'lucide-react';
 import { Document, UserRole, DocVersion } from '../types';
 import { getCurrentUser } from '../services/storageService';
 
@@ -95,8 +96,9 @@ const DocumentView: React.FC<DocumentViewProps> = ({ doc, onBack, onEdit }) => {
                 </div>
               </div>
            </div>
-
-           <div className="prose prose-slate prose-lg max-w-none">
+           
+           {/* Document Body */}
+           <div className="prose prose-slate prose-lg max-w-none mb-10">
               {displayedContent?.split('\n').map((line, i) => (
                 <div key={i} className="min-h-[1.5em]">
                   {line.startsWith('# ') ? <h1 className="text-2xl font-bold mt-6 mb-4">{line.replace('# ', '')}</h1> :
@@ -106,6 +108,37 @@ const DocumentView: React.FC<DocumentViewProps> = ({ doc, onBack, onEdit }) => {
                 </div>
               ))}
            </div>
+
+           {/* Attachments Section */}
+           {doc.attachments && doc.attachments.length > 0 && (
+             <div className="mt-8 border-t border-slate-200 pt-6">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
+                  <Paperclip className="w-5 h-5 mr-2 text-slate-500" />
+                  附件檔案 ({doc.attachments.length})
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {doc.attachments.map(att => (
+                    <div key={att.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center overflow-hidden">
+                        <FileText className="w-8 h-8 text-indigo-500 bg-indigo-50 p-1.5 rounded mr-3" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-700 truncate">{att.name}</p>
+                          <p className="text-xs text-slate-400">{Math.round(att.size / 1024)} KB • {new Date(att.uploadedAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <a 
+                        href={att.data} 
+                        download={att.name}
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+             </div>
+           )}
         </div>
       </div>
 

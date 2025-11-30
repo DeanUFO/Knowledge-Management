@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Save, Tag, Sparkles, AlertCircle } from 'lucide-react';
-import { Document, UserRole } from '../types';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Save, Tag, Sparkles, AlertCircle, Upload, X, File, Paperclip } from 'lucide-react';
+import { Document, UserRole, Attachment } from '../types';
 import { generateDocMetadata } from '../services/geminiService';
 import { getCurrentUser } from '../services/storageService';
 
@@ -18,7 +19,9 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onSave, onC
   const [newTag, setNewTag] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [accessLevel, setAccessLevel] = useState<UserRole>(initialDoc?.accessLevel || UserRole.VIEWER);
-
+  const [attachments, setAttachments] = useState<Attachment[]>(initialDoc?.attachments || []);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const user = getCurrentUser();
 
   const handleAddTag = () => {
@@ -44,6 +47,39 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onSave, onC
     setIsGenerating(false);
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Limit file size to 500KB for LocalStorage safety
+    if (file.size > 500 * 1024) {
+      alert("檔案大小超過限制 (500KB)。請使用小檔案以上傳至瀏覽器儲存空間。");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      const newAttachment: Attachment = {
+        id: Date.now().toString(),
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        data: result,
+        uploadedAt: new Date().toISOString()
+      };
+      setAttachments([...attachments, newAttachment]);
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments(attachments.filter(a => a.id !== id));
+  };
+
   const handleSave = () => {
     if (!title || !content) {
       alert("Title and content are required");
@@ -55,7 +91,8 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onSave, onC
       content,
       category,
       tags,
-      accessLevel
+      accessLevel,
+      attachments
     });
   };
 
@@ -128,7 +165,7 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onSave, onC
         </div>
 
         {/* Content Area */}
-        <div className="flex flex-col h-96 md:h-[500px]">
+        <div className="flex flex-col h-96 md:h-[400px]">
           <div className="flex justify-between items-center mb-1">
              <label className="block text-sm font-medium text-slate-700">內文 (Markdown 支援)</label>
              <button 
@@ -148,6 +185,46 @@ const DocumentEditor: React.FC<DocumentEditorProps> = ({ initialDoc, onSave, onC
             className="flex-1 w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm leading-relaxed resize-none"
             placeholder="# 開始撰寫文件...\n\n- 支援 Markdown 語法"
           />
+        </div>
+        
+        {/* Attachments */}
+        <div>
+           <div className="flex justify-between items-center mb-2">
+              <label className="block text-sm font-medium text-slate-700">附件檔案</label>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs flex items-center text-indigo-600 hover:text-indigo-800"
+              >
+                <Paperclip className="w-3 h-3 mr-1" /> 上傳檔案 (Max 500KB)
+              </button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                onChange={handleFileUpload}
+              />
+           </div>
+           
+           <div className="border border-slate-200 rounded-lg bg-slate-50 p-2 min-h-[50px] space-y-2">
+              {attachments.length === 0 && (
+                <p className="text-xs text-slate-400 text-center py-2">無附件檔案</p>
+              )}
+              {attachments.map(file => (
+                <div key={file.id} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200">
+                   <div className="flex items-center overflow-hidden">
+                      <File className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
+                      <div className="truncate text-sm text-slate-700">{file.name}</div>
+                      <span className="ml-2 text-xs text-slate-400">({Math.round(file.size / 1024)} KB)</span>
+                   </div>
+                   <button 
+                     onClick={() => removeAttachment(file.id)}
+                     className="text-slate-400 hover:text-red-500 p-1"
+                   >
+                     <X className="w-4 h-4" />
+                   </button>
+                </div>
+              ))}
+           </div>
         </div>
 
         {/* Tags */}
