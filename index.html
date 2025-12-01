@@ -69,6 +69,13 @@
         .sidebar-transition {
             transition: transform 0.3s ease-in-out;
         }
+        
+        .status-dot {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
     </style>
 </head>
 <body class="text-slate-800 h-screen overflow-hidden selection:bg-orange-100 bg-[#F8F9FA]">
@@ -114,7 +121,6 @@
     <div id="app-container" class="flex h-full overflow-hidden relative hidden">
         
         <!-- Sidebar (Responsive) -->
-        <!-- Fixed: Changed breakpoint from md to lg to prevent half-screen issue on tablets -->
         <aside class="sidebar-transition fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-slate-200 flex flex-col shadow-xl lg:shadow-none lg:relative lg:translate-x-0 -translate-x-full" id="sidebar">
             <!-- Logo Area -->
             <div class="p-6 flex justify-between items-start">
@@ -184,7 +190,6 @@
         </aside>
 
         <!-- Main Content -->
-        <!-- Fixed: Added min-w-0 and ensure w-full to prevent flex child overflow -->
         <main class="flex-1 flex flex-col h-full bg-[#F8F9FA] relative w-full min-w-0 overflow-hidden">
             <!-- Top Bar -->
             <header class="h-16 flex items-center px-4 md:px-8 justify-between shrink-0 bg-white/80 backdrop-blur border-b border-slate-200 z-10 sticky top-0">
@@ -229,7 +234,8 @@
             docs: [],
             projects: [],
             users: [],
-            history: [], // { id, docId, title, content, modifiedBy, modifiedAt }
+            auditLog: [], // { id, timestamp, action, actor, target, details }
+            history: [],
             currentUser: null,
             view: 'dashboard',
             selectedId: null,
@@ -252,10 +258,10 @@
             }
         ];
 
-        // Added sessionToken to mock data
+        // users with sessionToken and lastActive
         const MOCK_USERS = [
-            { id: 'u1', username: 'admin', password: 'admin', name: '系統管理員', role: 'ADMIN', sessionToken: '' },
-            { id: 'u2', username: 'user', password: 'user', name: '一般職員', role: 'USER', sessionToken: '' }
+            { id: 'u1', username: 'admin', password: 'admin', name: '系統管理員', role: 'ADMIN', sessionToken: '', lastActive: new Date().toISOString() },
+            { id: 'u2', username: 'user', password: 'user', name: '一般職員', role: 'USER', sessionToken: '', lastActive: new Date().toISOString() }
         ];
 
         // --- INIT ---
@@ -265,40 +271,36 @@
             const savedProjects = localStorage.getItem('wf_projects');
             const savedUsers = localStorage.getItem('wf_users');
             const savedHistory = localStorage.getItem('wf_history');
+            const savedAudit = localStorage.getItem('wf_audit');
 
             store.docs = savedDocs ? JSON.parse(savedDocs) : MOCK_DOCS;
             store.projects = savedProjects ? JSON.parse(savedProjects) : MOCK_PROJECTS;
             store.users = savedUsers ? JSON.parse(savedUsers) : MOCK_USERS;
             store.history = savedHistory ? JSON.parse(savedHistory) : [];
+            store.auditLog = savedAudit ? JSON.parse(savedAudit) : [];
+
+            // Add Event Listener for cross-tab sync/logout
+            window.addEventListener('storage', handleStorageEvent);
 
             // Check Session
             const sessionUser = sessionStorage.getItem('wf_session');
             if (sessionUser) {
-                store.currentUser = JSON.parse(sessionUser);
-                startSessionMonitor(); // Start heartbeat check
-                showApp();
+                const user = JSON.parse(sessionUser);
+                // Verify user still exists in DB (in case deleted)
+                const dbUser = store.users.find(u => u.id === user.id);
+                if (dbUser) {
+                    store.currentUser = dbUser;
+                    startSessionMonitor(); 
+                    showApp();
+                } else {
+                    logout(true);
+                }
             } else {
                 showLogin();
             }
         }
 
-        // --- UI HELPERS ---
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            
-            if (sidebar.classList.contains('-translate-x-full')) {
-                // Open
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                // Close
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        }
-
-        // --- AUTH & SINGLE SESSION LOGIC ---
+        // --- AUTH & SESSION LOGIC ---
         function showLogin() {
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('app-container').classList.add('hidden');
@@ -308,12 +310,10 @@
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             
-            // Update Sidebar User Info
             document.getElementById('user-avatar').innerText = store.currentUser.name[0];
             document.getElementById('user-name').innerText = store.currentUser.name;
             document.getElementById('user-role').innerText = store.currentUser.role;
 
-            // Hide/Show Admin Menus
             if (store.currentUser.role !== 'ADMIN') {
                 document.getElementById('nav-users').classList.add('hidden');
             } else {
@@ -328,7 +328,7 @@
             const u = document.getElementById('login-username').value;
             const p = document.getElementById('login-password').value;
             
-            // Reload users from storage to ensure we have latest data before login
+            // Reload users to ensure latest state
             const freshUsersStr = localStorage.getItem('wf_users');
             if (freshUsersStr) store.users = JSON.parse(freshUsersStr);
 
@@ -337,17 +337,22 @@
             if (userIndex !== -1) {
                 const user = store.users[userIndex];
                 
-                // SINGLE SESSION LOGIC: Generate new token
+                // 1. Generate new Token
                 const newToken = Date.now().toString() + Math.random().toString().slice(2,5);
                 
-                // 1. Update user in store with new token
+                // 2. Update Store
                 store.users[userIndex].sessionToken = newToken;
+                store.users[userIndex].lastActive = new Date().toISOString();
                 user.sessionToken = newToken;
+                user.lastActive = new Date().toISOString();
                 
-                // 2. Save store to localStorage (Kick out other sessions)
+                // 3. Log Action
+                logAudit('登入系統', user.username, '成功登入');
+
+                // 4. Save (Triggers 'storage' event in other tabs)
                 saveToStorage();
 
-                // 3. Save token to current tab's sessionStorage
+                // 5. Set Session
                 store.currentUser = user;
                 sessionStorage.setItem('wf_session', JSON.stringify(user));
                 sessionStorage.setItem('wf_token', newToken);
@@ -361,30 +366,69 @@
             }
         }
 
+        // Heartbeat & Single Session Enforcer
         let sessionInterval = null;
         
         function startSessionMonitor() {
             if (sessionInterval) clearInterval(sessionInterval);
             
+            // Check frequently (every 1s) for session validity
+            // Update heartbeat every 10s
+            let heartbeatCounter = 0;
+
             sessionInterval = setInterval(() => {
                 if (!store.currentUser) return;
                 
-                // Check if the token in localStorage matches our session token
+                // 1. Check Session Token Consistency
+                // Read from localStorage directly to avoid stale state
                 const freshUsersStr = localStorage.getItem('wf_users');
-                if (!freshUsersStr) return;
+                if (!freshUsersStr) return; // Should not happen
                 
                 const freshUsers = JSON.parse(freshUsersStr);
                 const freshUser = freshUsers.find(u => u.id === store.currentUser.id);
-                
                 const myToken = sessionStorage.getItem('wf_token');
                 
-                // If user exists in DB but token doesn't match my local token -> Kicked
+                // If token in DB is different from my token -> Kicked
                 if (freshUser && freshUser.sessionToken && freshUser.sessionToken !== myToken) {
                     clearInterval(sessionInterval);
-                    alert("偵測到此帳號已在其他裝置或視窗登入。\n\n基於安全考量，本連線將中斷。");
+                    alert("偵測到此帳號已在其他視窗或裝置登入。\n\n本連線將被強制登出。");
                     logout(true);
+                    return;
                 }
-            }, 3000); // Check every 3 seconds
+
+                // 2. Heartbeat (every 10s)
+                heartbeatCounter++;
+                if (heartbeatCounter >= 10) {
+                    heartbeatCounter = 0;
+                    // Update lastActive in memory and storage
+                    const idx = store.users.findIndex(u => u.id === store.currentUser.id);
+                    if (idx !== -1) {
+                        store.users[idx].lastActive = new Date().toISOString();
+                        saveToStorage(); // This saves timestamp
+                        // Sync current view data if needed (users view)
+                        if (store.view === 'users') render(); 
+                    }
+                }
+            }, 1000);
+        }
+
+        // Handle cross-tab events
+        function handleStorageEvent(e) {
+            if (e.key === 'wf_users' && store.currentUser) {
+                // If users changed, check if MY token is still valid immediately
+                const newUsers = JSON.parse(e.newValue);
+                const me = newUsers.find(u => u.id === store.currentUser.id);
+                const myToken = sessionStorage.getItem('wf_token');
+                
+                if (me && me.sessionToken !== myToken) {
+                    alert("偵測到此帳號已在其他視窗登入 (Sync)。\n\n本連線將被強制登出。");
+                    logout(true);
+                } else if (me) {
+                    // Update local user list for "Online Status" display
+                    store.users = newUsers;
+                    if (store.view === 'users') render();
+                }
+            }
         }
 
         function logout(force = false) {
@@ -392,12 +436,22 @@
             sessionStorage.removeItem('wf_token');
             store.currentUser = null;
             if (sessionInterval) clearInterval(sessionInterval);
-            
-            // Reset View
-            if (!force) {
-                // Regular logout (optional: clear token in DB? No, keep it to prevent confusion)
-            }
             showLogin();
+        }
+
+        function logAudit(action, target, details) {
+            const entry = {
+                id: 'log' + Date.now(),
+                timestamp: new Date().toISOString(),
+                action: action,
+                actor: store.currentUser ? store.currentUser.username : 'System',
+                target: target,
+                details: details
+            };
+            store.auditLog.unshift(entry);
+            // Limit log size to 1000 to prevent localstorage full
+            if (store.auditLog.length > 1000) store.auditLog = store.auditLog.slice(0, 1000);
+            saveToStorage();
         }
 
         // --- ROUTING ---
@@ -411,7 +465,6 @@
                 store.selectedId = param;
             }
 
-            // Close sidebar on mobile navigation (Updated for 1024px breakpoint)
             if (window.innerWidth < 1024) {
                 document.getElementById('sidebar').classList.add('-translate-x-full');
                 document.getElementById('sidebar-overlay').classList.add('hidden');
@@ -420,15 +473,25 @@
             render();
         }
 
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
         function render() {
             const container = document.getElementById('app-content');
             const breadcrumbs = document.getElementById('breadcrumbs');
             
-            // Sidebar State
             document.querySelectorAll('.nav-item').forEach(el => {
                 const clickAttr = el.getAttribute('onclick');
                 let isActive = false;
-                
                 if (store.view === 'documents') {
                      if (clickAttr.includes(`'${store.view}', '${store.filterCategory}'`)) isActive = true;
                 } else {
@@ -444,7 +507,6 @@
                 }
             });
 
-            // Route Logic
             switch(store.view) {
                 case 'dashboard':
                     breadcrumbs.innerHTML = '<span>首頁</span> <span class="mx-2">/</span> <span class="text-twm-orange font-bold">儀表板</span>';
@@ -486,13 +548,18 @@
                 default:
                     container.innerHTML = '<div class="p-8">404 Not Found</div>';
             }
-            
             lucide.createIcons();
         }
 
         // --- VIEWS ---
-
         function renderDashboard() {
+            // Count online users (Active in last 2 mins)
+            const now = new Date();
+            const onlineCount = store.users.filter(u => {
+                const last = u.lastActive ? new Date(u.lastActive) : new Date(0);
+                return (now - last) < 2 * 60 * 1000;
+            }).length;
+
             return `
                 <div class="max-w-6xl mx-auto space-y-8" id="dashboard-content">
                     <div class="flex justify-between items-end">
@@ -505,14 +572,12 @@
                         </button>
                     </div>
 
-                    <!-- Security Banner -->
                     <div class="bg-orange-50 border-l-4 border-twm-orange p-4 rounded-r shadow-sm flex items-start gap-3">
                         <i data-lucide="shield-alert" class="w-6 h-6 text-twm-orange shrink-0 mt-0.5"></i>
                         <div>
                             <h3 class="font-bold text-twm-orange text-sm">資安與儲存宣告 (Local Storage Only)</h3>
                             <p class="text-sm text-slate-600 mt-1 leading-relaxed">
-                                本系統運作於「本機離線模式」。您上傳的機房維運、ISMS 表單及各類文件檔案，**僅儲存於您目前的電腦硬碟 C 槽 (瀏覽器快取)**。
-                                本介面僅提供檔名索引與統計數據展示，不會將實體檔案上傳至任何雲端伺服器。請務必定期至「資料庫管理」執行 Excel 匯出備份。
+                                本系統運作於「本機離線模式」。檔案與數據僅儲存於電腦 C 槽。線上狀態顯示僅適用於同一瀏覽器環境。請務必定期備份。
                             </p>
                         </div>
                     </div>
@@ -522,9 +587,11 @@
                             <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">文件總數</div>
                             <div class="text-4xl font-bold text-slate-800">${store.docs.length}</div>
                         </div>
-                        <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-blue-500 cursor-pointer" onclick="navigate('documents', '機房維運')">
-                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">機房維運文件</div>
-                            <div class="text-4xl font-bold text-slate-800">${store.docs.filter(d => d.category === '機房維運').length}</div>
+                         <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-blue-500 cursor-pointer" onclick="navigate('users')">
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">目前線上人數 (Local)</div>
+                            <div class="text-4xl font-bold text-slate-800 flex items-center gap-2">
+                                ${onlineCount} <span class="text-sm text-green-500 font-medium bg-green-50 px-2 py-1 rounded-full animate-pulse">● Online</span>
+                            </div>
                         </div>
                          <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-purple-500 cursor-pointer" onclick="navigate('documents', 'ISMS')">
                             <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">ISMS 資安文件</div>
@@ -535,8 +602,9 @@
                             <div class="text-4xl font-bold text-slate-800">${store.projects.length}</div>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <!-- ... Rest of Dashboard (Recent Updates & Quick Upload) remains same ... -->
+                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
                             <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-700">
                                 <i data-lucide="clock" class="w-5 h-5 text-twm-orange"></i> 最近更新文件
@@ -579,6 +647,7 @@
                 </div>
             `;
         }
+        // ... (renderDocList, renderDocView, renderDocEditor, renderAttachmentsList, project functions remain same) ...
 
         function renderDocList() {
             const filteredDocs = store.filterCategory === 'all' 
@@ -602,7 +671,6 @@
                         </div>
                     </div>
 
-                    <!-- Category Tabs -->
                     <div class="flex gap-1 mb-6 border-b border-slate-200 overflow-x-auto pb-1 no-scrollbar">
                         <button onclick="navigate('documents', 'all')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${store.filterCategory === 'all' ? 'border-twm-orange text-twm-orange' : 'border-transparent text-slate-500 hover:text-slate-700'}">全部文件</button>
                         <button onclick="navigate('documents', '機房維運')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${store.filterCategory === '機房維運' ? 'border-twm-orange text-twm-orange' : 'border-transparent text-slate-500 hover:text-slate-700'}">機房維運</button>
@@ -731,7 +799,6 @@
             const historyItem = store.history.find(h => h.id === historyId);
             if(historyItem) {
                 const docIdx = store.docs.findIndex(d => d.id === historyItem.docId);
-                // Save current as history before restore
                 const currentDoc = store.docs[docIdx];
                  store.history.push({
                     id: 'h' + Date.now(),
@@ -742,7 +809,6 @@
                     modifiedAt: new Date().toISOString()
                 });
 
-                // Restore
                 store.docs[docIdx] = {
                     ...store.docs[docIdx],
                     title: historyItem.title,
@@ -751,15 +817,13 @@
                     updatedBy: store.currentUser.name
                 };
                 saveToStorage();
-                render(); // Re-render to update view
+                render();
             }
         }
 
         function renderDocEditor(doc) {
             const isNew = !doc;
             const data = doc || { title: '', content: '', category: store.filterCategory === 'all' ? 'General' : store.filterCategory, tags: [], attachments: [] };
-            
-            // Temporary Edit State
             window.currentEditDoc = JSON.parse(JSON.stringify(data)); 
 
             return `
@@ -821,7 +885,6 @@
             `).join('');
         }
 
-        // --- ATTACHMENT LOGIC ---
         function handleFileUpload(input) {
             const file = input.files[0];
             if (!file) return;
@@ -832,18 +895,15 @@
             });
         }
 
-        // Quick Upload logic for the button in Document List
         function triggerQuickUpload(category) {
-            store.filterCategory = category === 'all' ? 'General' : category; // Set context
+            store.filterCategory = category === 'all' ? 'General' : category;
             document.getElementById('quick-file-upload').click();
         }
 
         function handleQuickUpload(input) {
             const file = input.files[0];
             if (!file) return;
-
             processFile(file, (att) => {
-                // Auto-create document
                 const newDoc = {
                     id: 'd' + Date.now(),
                     title: file.name,
@@ -856,9 +916,9 @@
                 };
                 store.docs.unshift(newDoc);
                 saveToStorage();
-                navigate('doc-view', newDoc.id); // Go to view
+                navigate('doc-view', newDoc.id);
             });
-            input.value = ''; // Reset
+            input.value = '';
         }
 
         function processFile(file, callback) {
@@ -886,10 +946,8 @@
             const title = document.getElementById('edit-title').value;
             const content = document.getElementById('edit-content').value;
             const category = document.getElementById('edit-category').value;
-
             if (!title) return alert('請輸入標題');
-
-            // --- VERSION CONTROL: Save History if editing existing doc ---
+            
             if (id) {
                 const oldDoc = store.docs.find(d => d.id === id);
                 if (oldDoc) {
@@ -907,9 +965,7 @@
             const docData = {
                 ...window.currentEditDoc,
                 id: id || 'd' + Date.now(),
-                title,
-                content,
-                category,
+                title, content, category,
                 updatedAt: new Date().toISOString(),
                 updatedBy: store.currentUser.name
             };
@@ -920,12 +976,10 @@
             } else {
                 store.docs.unshift(docData);
             }
-            
             saveToStorage();
             navigate('doc-view', docData.id);
         }
 
-        // --- CHART DOWNLOAD ---
         function downloadChart() {
             const element = document.getElementById('dashboard-content');
             html2canvas(element).then(canvas => {
@@ -936,7 +990,6 @@
             });
         }
 
-        // --- PROJECT VIEWS ---
         function renderProjectList() {
             return `
                 <div class="max-w-6xl mx-auto">
@@ -975,9 +1028,7 @@
             if(name) {
                 const newProj = {
                     id: 'p' + Date.now(),
-                    name: name,
-                    status: 'Active',
-                    tasks: []
+                    name: name, status: 'Active', tasks: []
                 };
                 store.projects.push(newProj);
                 saveToStorage();
@@ -988,7 +1039,6 @@
         function renderProjectBoard(project) {
             if(!project) return 'Project not found';
             const statuses = ['To Do', 'In Progress', 'Done'];
-            
             return `
                 <div class="flex flex-col h-full overflow-hidden">
                     <div class="h-16 flex items-center justify-between shrink-0 mb-4">
@@ -1000,7 +1050,6 @@
                              <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden md:inline">新增任務</span>
                         </button>
                     </div>
-                    
                     <div class="flex-1 overflow-x-auto overflow-y-hidden pb-4">
                         <div class="flex h-full gap-6 w-max">
                             ${statuses.map(status => `
@@ -1031,7 +1080,6 @@
             `;
         }
 
-        // --- KANBAN LOGIC ---
         function allowDrop(ev) { ev.preventDefault(); }
         function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
         function drop(ev, newStatus) {
@@ -1039,61 +1087,69 @@
             const taskId = ev.dataTransfer.getData("text");
             const proj = store.projects.find(p => p.id === store.selectedId);
             const task = proj.tasks.find(t => t.id === taskId);
-            if (task) {
-                task.status = newStatus;
-                saveToStorage();
-                render(); 
-            }
+            if (task) { task.status = newStatus; saveToStorage(); render(); }
         }
         function addTask(pid) {
             const title = prompt("任務標題:");
             if (title) {
                 const proj = store.projects.find(p => p.id === pid);
                 proj.tasks.push({ id: 't'+Date.now(), title, status: 'To Do', priority: 'Medium' });
-                saveToStorage();
-                render();
+                saveToStorage(); render();
             }
         }
         function deleteTask(pid, tid) {
             if(!confirm("刪除此任務?")) return;
             const proj = store.projects.find(p => p.id === pid);
             proj.tasks = proj.tasks.filter(t => t.id !== tid);
-            saveToStorage();
-            render();
+            saveToStorage(); render();
         }
 
         // --- USER MANAGER ---
         function renderUserManager() {
+             const now = new Date();
+             
              return `
-                <div class="max-w-4xl mx-auto">
-                    <div class="flex justify-between items-center mb-8">
+                <div class="max-w-4xl mx-auto space-y-8">
+                    <div class="flex justify-between items-center">
                         <h1 class="text-2xl md:text-3xl font-bold text-slate-800">帳號管理</h1>
                         <button onclick="addUser()" class="btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-orange-200">
                             <i data-lucide="user-plus" class="w-4 h-4"></i> <span class="hidden md:inline">新增使用者</span>
                         </button>
                     </div>
 
-                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm overflow-x-auto">
+                    <!-- Online Status Section -->
+                     <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-700 text-sm uppercase">目前帳號列表</h3>
+                            <span class="text-xs text-slate-500">🟢 表示 60 秒內有活動</span>
+                        </div>
                         <table class="w-full text-sm text-left text-slate-600 min-w-[600px]">
                             <thead class="text-xs text-slate-400 uppercase bg-slate-50 border-b border-slate-100">
                                 <tr>
-                                    <th class="px-6 py-4">姓名</th>
-                                    <th class="px-6 py-4">帳號</th>
-                                    <th class="px-6 py-4">密碼</th>
-                                    <th class="px-6 py-4">角色</th>
-                                    <th class="px-6 py-4">操作</th>
+                                    <th class="px-6 py-3">狀態</th>
+                                    <th class="px-6 py-3">姓名</th>
+                                    <th class="px-6 py-3">帳號</th>
+                                    <th class="px-6 py-3">角色</th>
+                                    <th class="px-6 py-3">最後活動</th>
+                                    <th class="px-6 py-3">操作</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${store.users.map(u => `
+                                ${store.users.map(u => {
+                                    const last = u.lastActive ? new Date(u.lastActive) : new Date(0);
+                                    const isOnline = (now - last) < 60 * 1000;
+                                    return `
                                     <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                        <td class="px-6 py-4 font-bold text-slate-800">${u.name}</td>
-                                        <td class="px-6 py-4">${u.username}</td>
-                                        <td class="px-6 py-4 font-mono text-xs">******</td>
-                                        <td class="px-6 py-4">
+                                        <td class="px-6 py-3">
+                                            <span class="status-dot ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}" title="${isOnline ? 'Online' : 'Offline'}"></span>
+                                        </td>
+                                        <td class="px-6 py-3 font-bold text-slate-800">${u.name}</td>
+                                        <td class="px-6 py-3">${u.username}</td>
+                                        <td class="px-6 py-3">
                                             <span class="px-2 py-1 rounded text-xs font-bold ${u.role === 'ADMIN' ? 'bg-orange-100 text-twm-orange' : 'bg-slate-100 text-slate-500'}">${u.role}</span>
                                         </td>
-                                        <td class="px-6 py-4">
+                                        <td class="px-6 py-3 text-xs font-mono text-slate-400">${u.lastActive ? new Date(u.lastActive).toLocaleTimeString() : '-'}</td>
+                                        <td class="px-6 py-3">
                                             <div class="flex items-center gap-3">
                                                 <button onclick="editUser('${u.id}')" class="text-twm-blue hover:text-blue-700 font-bold text-xs flex items-center gap-1">
                                                     <i data-lucide="edit" class="w-3 h-3"></i> 修改
@@ -1101,14 +1157,45 @@
                                                 ${u.username !== 'admin' ? 
                                                 `<button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 font-bold text-xs flex items-center gap-1">
                                                     <i data-lucide="trash" class="w-3 h-3"></i> 刪除
-                                                </button>` : 
-                                                '<span class="text-slate-300 text-xs italic">系統保護(限刪除)</span>'}
+                                                </button>` : ''}
                                             </div>
                                         </td>
                                     </tr>
-                                `).join('')}
+                                `}).join('')}
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Audit Log Section -->
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                             <h3 class="font-bold text-slate-700 text-sm uppercase">帳號修改與登入紀錄 (Audit Log)</h3>
+                        </div>
+                         <div class="max-h-64 overflow-y-auto">
+                            <table class="w-full text-sm text-left text-slate-600">
+                                <thead class="text-xs text-slate-400 uppercase bg-slate-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-6 py-2">時間</th>
+                                        <th class="px-6 py-2">執行者</th>
+                                        <th class="px-6 py-2">動作</th>
+                                        <th class="px-6 py-2">對象</th>
+                                        <th class="px-6 py-2">詳情</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${store.auditLog.length === 0 ? '<tr><td colspan="5" class="px-6 py-4 text-center text-slate-400">尚無紀錄</td></tr>' : ''}
+                                    ${store.auditLog.map(log => `
+                                        <tr class="border-b border-slate-50 hover:bg-slate-50">
+                                            <td class="px-6 py-2 text-xs text-slate-400 font-mono">${new Date(log.timestamp).toLocaleString()}</td>
+                                            <td class="px-6 py-2 font-bold">${log.actor}</td>
+                                            <td class="px-6 py-2 text-twm-blue">${log.action}</td>
+                                            <td class="px-6 py-2">${log.target}</td>
+                                            <td class="px-6 py-2 text-xs text-slate-500">${log.details}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1119,12 +1206,12 @@
             const username = prompt("輸入帳號:");
             const password = prompt("輸入密碼:");
             const role = prompt("輸入角色 (ADMIN / USER):", "USER");
-            
             if(name && username && password) {
                 store.users.push({
                     id: 'u' + Date.now(),
-                    name, username, password, role: role.toUpperCase(), sessionToken: ''
+                    name, username, password, role: role.toUpperCase(), sessionToken: '', lastActive: ''
                 });
+                logAudit('新增使用者', username, `Role: ${role}`);
                 saveToStorage();
                 render();
             }
@@ -1133,40 +1220,48 @@
         function editUser(uid) {
             const user = store.users.find(u => u.id === uid);
             if(!user) return;
-            
-            // Name
             const newName = prompt(`修改 ${user.username} 的姓名:`, user.name);
-            if (newName !== null && newName.trim() !== "") user.name = newName;
+            let updated = false;
+            let details = [];
 
-            // Password
-            const newPass = prompt(`修改 ${user.username} 的密碼 (若不修改請留空):`);
-            if (newPass !== null && newPass.trim() !== "") user.password = newPass;
-
-            // Role
-            if (user.username !== 'admin') {
-                const newRole = prompt(`修改 ${user.username} 的角色 (ADMIN / USER):`, user.role);
-                if (newRole !== null && newRole.trim() !== "") user.role = newRole.toUpperCase();
+            if (newName !== null && newName.trim() !== "") {
+                if (user.name !== newName) { details.push('姓名'); user.name = newName; updated = true; }
             }
 
-            saveToStorage();
-            render();
-            alert("使用者資料更新成功！");
+            const newPass = prompt(`修改 ${user.username} 的密碼 (若不修改請留空):`);
+            if (newPass !== null && newPass.trim() !== "") {
+                details.push('密碼'); user.password = newPass; updated = true;
+            }
+
+            if (user.username !== 'admin') {
+                const newRole = prompt(`修改 ${user.username} 的角色 (ADMIN / USER):`, user.role);
+                if (newRole !== null && newRole.trim() !== "") {
+                     if (user.role !== newRole.toUpperCase()) { details.push('角色'); user.role = newRole.toUpperCase(); updated = true; }
+                }
+            }
+
+            if(updated) {
+                logAudit('修改使用者', user.username, `更新項目: ${details.join(', ')}`);
+                saveToStorage();
+                render();
+                alert("使用者資料更新成功！");
+            }
         }
 
         function deleteUser(uid) {
             if(!confirm("確定刪除此使用者?")) return;
+            const u = store.users.find(u => u.id === uid);
+            logAudit('刪除使用者', u ? u.username : uid, 'Deleted');
             store.users = store.users.filter(u => u.id !== uid);
             saveToStorage();
             render();
         }
 
-        // --- EXCEL DATABASE MANAGER ---
         function renderDatabaseManager() {
             return `
                  <div class="max-w-4xl mx-auto">
                     <h1 class="text-2xl md:text-3xl font-bold mb-8 text-slate-800">資料庫與備份</h1>
                     
-                    <!-- SOP Guide -->
                     <div class="bg-white rounded-xl border border-slate-200 p-6 md:p-8 shadow-sm mb-8">
                         <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
                              <i data-lucide="book-open" class="w-5 h-5 text-twm-orange"></i> 資料維運標準作業程序 (SOP)
@@ -1230,40 +1325,26 @@
             `;
         }
 
-        // --- EXCEL LOGIC ---
         document.getElementById('excel-upload').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if(!file) return;
-            
             const reader = new FileReader();
             reader.onload = (e) => {
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
-                
                 if (workbook.Sheets['Docs']) {
                     const rawDocs = XLSX.utils.sheet_to_json(workbook.Sheets['Docs']);
                     store.docs = rawDocs.map(d => ({
-                        ...d,
-                        tags: d.tags ? JSON.parse(d.tags) : [],
-                        attachments: d.attachments ? JSON.parse(d.attachments) : []
+                        ...d, tags: d.tags ? JSON.parse(d.tags) : [], attachments: d.attachments ? JSON.parse(d.attachments) : []
                     }));
                 }
-
                 if (workbook.Sheets['Projects']) {
                     const rawProjects = XLSX.utils.sheet_to_json(workbook.Sheets['Projects']);
-                    store.projects = rawProjects.map(p => ({
-                        ...p,
-                        tasks: p.tasks ? JSON.parse(p.tasks) : []
-                    }));
+                    store.projects = rawProjects.map(p => ({ ...p, tasks: p.tasks ? JSON.parse(p.tasks) : [] }));
                 }
-                
-                if (workbook.Sheets['Users']) {
-                    store.users = XLSX.utils.sheet_to_json(workbook.Sheets['Users']);
-                }
-                
-                if (workbook.Sheets['History']) {
-                    store.history = XLSX.utils.sheet_to_json(workbook.Sheets['History']);
-                }
+                if (workbook.Sheets['Users']) store.users = XLSX.utils.sheet_to_json(workbook.Sheets['Users']);
+                if (workbook.Sheets['History']) store.history = XLSX.utils.sheet_to_json(workbook.Sheets['History']);
+                if (workbook.Sheets['AuditLog']) store.auditLog = XLSX.utils.sheet_to_json(workbook.Sheets['AuditLog']);
 
                 saveToStorage();
                 alert('資料庫匯入成功！請重新登入。');
@@ -1274,31 +1355,22 @@
 
         function exportToExcel() {
             const wb = XLSX.utils.book_new();
-            
-            // 1. Docs
-            const serializedDocs = store.docs.map(d => ({
-                ...d,
-                tags: JSON.stringify(d.tags),
-                attachments: JSON.stringify(d.attachments)
-            }));
+            const serializedDocs = store.docs.map(d => ({ ...d, tags: JSON.stringify(d.tags), attachments: JSON.stringify(d.attachments) }));
             const wsDocs = XLSX.utils.json_to_sheet(serializedDocs);
             XLSX.utils.book_append_sheet(wb, wsDocs, "Docs");
 
-            // 2. Projects
-            const serializedProjects = store.projects.map(p => ({
-                ...p,
-                tasks: JSON.stringify(p.tasks)
-            }));
+            const serializedProjects = store.projects.map(p => ({ ...p, tasks: JSON.stringify(p.tasks) }));
             const wsProjects = XLSX.utils.json_to_sheet(serializedProjects);
             XLSX.utils.book_append_sheet(wb, wsProjects, "Projects");
             
-            // 3. Users
             const wsUsers = XLSX.utils.json_to_sheet(store.users);
             XLSX.utils.book_append_sheet(wb, wsUsers, "Users");
             
-            // 4. History
             const wsHistory = XLSX.utils.json_to_sheet(store.history);
             XLSX.utils.book_append_sheet(wb, wsHistory, "History");
+
+            const wsAudit = XLSX.utils.json_to_sheet(store.auditLog);
+            XLSX.utils.book_append_sheet(wb, wsAudit, "AuditLog");
 
             XLSX.writeFile(wb, `CDC_Backup_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
@@ -1308,9 +1380,9 @@
             localStorage.setItem('wf_projects', JSON.stringify(store.projects));
             localStorage.setItem('wf_users', JSON.stringify(store.users));
             localStorage.setItem('wf_history', JSON.stringify(store.history));
+            localStorage.setItem('wf_audit', JSON.stringify(store.auditLog));
         }
 
-        // Start
         init();
     </script>
 </body>
