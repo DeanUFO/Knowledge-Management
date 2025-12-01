@@ -90,7 +90,7 @@
                 <h1 class="text-2xl font-bold text-slate-800">雲端資料中心部</h1>
                 <p class="text-slate-500 text-sm mt-1">知識與專案管理系統</p>
                 <div class="mt-2 px-3 py-1 bg-slate-100 rounded text-[10px] text-slate-500 font-bold border border-slate-200">
-                    <i data-lucide="hard-drive" class="w-3 h-3 inline mr-1"></i> 請備份至 D 槽 (D:\CDC_System_Data)
+                    <i data-lucide="hard-drive" class="w-3 h-3 inline mr-1"></i> 請將實體檔案存於 D:\CDC_System_Data
                 </div>
             </div>
             
@@ -108,7 +108,7 @@
             </form>
         </div>
         <div class="mt-8 text-slate-400 text-xs text-center px-4">
-            <p>資料安全宣告：本系統為離線運作。請每日將資料庫備份至 D:\CDC_System_Data</p>
+            <p>資料安全宣告：本系統僅建立索引與統計。實體檔案請存於本機 D 槽。</p>
             <p>© 2025 CDC System. All rights reserved.</p>
         </div>
     </div>
@@ -607,9 +607,10 @@
                     <div class="bg-orange-50 border-l-4 border-twm-orange p-4 rounded-r shadow-sm flex items-start gap-3">
                         <i data-lucide="shield-alert" class="w-6 h-6 text-twm-orange shrink-0 mt-0.5"></i>
                         <div>
-                            <h3 class="font-bold text-twm-orange text-sm">資料落地儲存規範 (D Drive Policy)</h3>
+                            <h3 class="font-bold text-twm-orange text-sm">實體檔案落地 D 槽規範 (D Drive Policy)</h3>
                             <p class="text-sm text-slate-600 mt-1 leading-relaxed">
-                                本系統運作於瀏覽器記憶體。為確保資料安全，<span class="font-bold text-red-600">請每日將備份檔匯出至 D:\CDC_System_Data</span> 資料夾中保存。
+                                本系統僅作為「文件索引」與「數據統計」。<br>
+                                檔案上傳時系統不儲存內容，請務必將實體檔案手動存於 <span class="font-bold text-red-600">D:\CDC_System_Data</span> 資料夾中。
                             </p>
                         </div>
                     </div>
@@ -660,19 +661,19 @@
 
                          <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
                             <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-700">
-                                <i data-lucide="zap" class="w-5 h-5 text-twm-orange"></i> 快速存取 (本機上傳)
+                                <i data-lucide="zap" class="w-5 h-5 text-twm-orange"></i> 快速登記 (目錄索引)
                             </h2>
                             <div class="grid grid-cols-2 gap-4">
                                 <button onclick="triggerQuickUpload('機房維運')" class="p-4 border border-dashed border-slate-300 rounded-lg hover:border-twm-orange hover:bg-orange-50 transition-all flex flex-col items-center justify-center gap-2 group">
                                     <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-400 group-hover:text-twm-orange"></i>
-                                    <span class="text-sm font-medium text-slate-600 group-hover:text-twm-orange">上傳維運日誌</span>
+                                    <span class="text-sm font-medium text-slate-600 group-hover:text-twm-orange">登記維運日誌</span>
                                 </button>
                                  <button onclick="triggerQuickUpload('ISMS')" class="p-4 border border-dashed border-slate-300 rounded-lg hover:border-twm-orange hover:bg-orange-50 transition-all flex flex-col items-center justify-center gap-2 group">
                                     <i data-lucide="shield" class="w-6 h-6 text-slate-400 group-hover:text-twm-orange"></i>
-                                    <span class="text-sm font-medium text-slate-600 group-hover:text-twm-orange">上傳 ISMS 表單</span>
+                                    <span class="text-sm font-medium text-slate-600 group-hover:text-twm-orange">登記 ISMS 表單</span>
                                 </button>
                             </div>
-                            <p class="text-[10px] text-slate-400 mt-4 text-center">所有上傳動作為系統暫存。請務必匯出至 D:\CDC_System_Data</p>
+                            <p class="text-[10px] text-slate-400 mt-4 text-center">注意：系統僅記錄檔名。實體檔案請自行存於 D 槽。</p>
                         </div>
                     </div>
                 </div>
@@ -689,11 +690,11 @@
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                         <div>
                             <h1 class="text-2xl md:text-3xl font-bold text-slate-800">${store.filterCategory === 'all' ? '文件庫' : store.filterCategory}</h1>
-                            <p class="text-slate-500 text-sm mt-1">共 ${filteredDocs.length} 份文件 (Local Database)</p>
+                            <p class="text-slate-500 text-sm mt-1">共 ${filteredDocs.length} 份文件 (Metadata Index)</p>
                         </div>
                         <div class="flex gap-3 w-full md:w-auto">
                             <button onclick="triggerQuickUpload('${store.filterCategory}')" class="flex-1 md:flex-none justify-center bg-white border border-slate-300 hover:border-twm-orange hover:text-twm-orange text-slate-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
-                                <i data-lucide="upload" class="w-4 h-4"></i> 上傳檔案
+                                <i data-lucide="upload" class="w-4 h-4"></i> 登記檔案
                             </button>
                             <button onclick="navigate('doc-edit')" class="flex-1 md:flex-none justify-center btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-orange-200">
                                 <i data-lucide="plus" class="w-4 h-4"></i> 新增文件
@@ -712,7 +713,7 @@
                         `<div class="text-center py-20 bg-white rounded-xl border border-slate-200 border-dashed">
                             <div class="inline-flex p-4 bg-slate-50 rounded-full mb-4"><i data-lucide="folder-open" class="w-8 h-8 text-slate-400"></i></div>
                             <p class="text-slate-500">此分類尚無文件</p>
-                            <button onclick="triggerQuickUpload('${store.filterCategory}')" class="text-twm-orange hover:underline text-sm font-bold mt-2">立即上傳 (至系統暫存)</button>
+                            <button onclick="triggerQuickUpload('${store.filterCategory}')" class="text-twm-orange hover:underline text-sm font-bold mt-2">立即登記檔案 (僅記錄)</button>
                         </div>` 
                     : 
                         `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -767,10 +768,12 @@
                             ${doc.attachments && doc.attachments.length > 0 ? `
                                 <div class="mt-12 pt-6 border-t border-slate-200">
                                     <h3 class="text-sm font-bold text-slate-500 uppercase mb-4 flex items-center gap-2">
-                                        <i data-lucide="folder-down" class="w-4 h-4"></i> 附件下載區
+                                        <i data-lucide="folder-search" class="w-4 h-4"></i> 實體檔案目錄 (請至 D 槽開啟)
                                     </h3>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        ${doc.attachments.map(att => `
+                                        ${doc.attachments.map(att => {
+                                            const displayPath = att.path || `D:\\CDC_System_Data\\Files\\${doc.category}\\${att.name}`;
+                                            return `
                                             <div class="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-twm-orange hover:bg-orange-50 transition-all group bg-slate-50">
                                                 <div class="flex items-center gap-3 overflow-hidden">
                                                     <div class="bg-white p-2 rounded shadow-sm text-twm-orange">
@@ -778,14 +781,14 @@
                                                     </div>
                                                     <div class="min-w-0">
                                                         <div class="truncate text-sm font-bold text-slate-700 group-hover:text-twm-orange">${att.name}</div>
-                                                        <div class="text-xs text-slate-400">${Math.round(att.size/1024)} KB</div>
+                                                        <div class="text-[10px] text-slate-400 truncate" title="${displayPath}">${displayPath}</div>
                                                     </div>
                                                 </div>
-                                                <a href="${att.data}" download="${att.name}" class="text-slate-400 hover:text-twm-orange p-2 rounded-full hover:bg-white transition-colors">
-                                                    <i data-lucide="download" class="w-5 h-5"></i>
-                                                </a>
+                                                <button onclick="navigator.clipboard.writeText('${displayPath.replace(/\\/g, '\\\\')}').then(() => alert('檔案路徑已複製！\\n請開啟檔案總管貼上路徑開啟。'))" class="text-slate-400 hover:text-twm-orange p-2 rounded-full hover:bg-white transition-colors" title="複製 D 槽路徑">
+                                                    <i data-lucide="copy" class="w-5 h-5"></i>
+                                                </button>
                                             </div>
-                                        `).join('')}
+                                        `}).join('')}
                                     </div>
                                 </div>
                             ` : ''}
@@ -881,12 +884,12 @@
                             </select>
                         </div>
                         <div>
-                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">附件 Attachment</label>
+                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">檔案登記 Attachment Registration</label>
                              <button onclick="document.getElementById('file-upload-input').click()" class="w-full text-left px-3 py-2 bg-slate-50 border border-slate-200 border-dashed rounded-lg text-slate-500 hover:text-twm-orange hover:border-twm-orange hover:bg-orange-50 transition-all text-sm flex items-center gap-2">
-                                <i data-lucide="upload" class="w-4 h-4"></i> 點擊上傳檔案 (Local)
+                                <i data-lucide="file-input" class="w-4 h-4"></i> 選擇檔案以建立索引 (不存內容)
                              </button>
                              <input type="file" id="file-upload-input" class="hidden" onchange="handleFileUpload(this)">
-                             <p class="text-[10px] text-red-500 font-bold mt-1">注意：檔案暫存於瀏覽器。請務必每日匯出 Excel 並存檔至 D 槽 (D:\CDC_System_Data)。</p>
+                             <p class="text-[10px] text-red-500 font-bold mt-1">選取後系統僅記錄檔名。請務必將實體檔案存於 D:\CDC_System_Data。</p>
                         </div>
                     </div>
 
@@ -906,7 +909,7 @@
                     <div class="flex items-center gap-3 overflow-hidden">
                         <div class="bg-white p-1.5 rounded text-twm-orange shadow-sm"><i data-lucide="file" class="w-4 h-4"></i></div>
                         <span class="text-sm font-medium text-slate-700 truncate">${att.name}</span>
-                        <span class="text-xs text-slate-400">(${Math.round(att.size/1024)} KB)</span>
+                        <span class="text-xs text-slate-400 font-mono">${att.path}</span>
                     </div>
                     <button onclick="removeAttachment(${idx})" class="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
                         <i data-lucide="x" class="w-4 h-4"></i>
@@ -918,11 +921,13 @@
         function handleFileUpload(input) {
             const file = input.files[0];
             if (!file) return;
-            processFile(file, (att) => {
+            const category = document.getElementById('edit-category').value;
+            processFile(file, category, (att) => {
                 window.currentEditDoc.attachments.push(att);
                 document.getElementById('attachments-list').innerHTML = renderAttachmentsList(window.currentEditDoc.attachments);
                 lucide.createIcons();
             });
+            input.value = ''; // Reset
         }
 
         function triggerQuickUpload(category) {
@@ -933,13 +938,13 @@
         function handleQuickUpload(input) {
             const file = input.files[0];
             if (!file) return;
-            processFile(file, (att) => {
+            processFile(file, store.filterCategory, (att) => {
                 const newDoc = {
                     id: 'd' + Date.now(),
                     title: file.name,
-                    content: `檔案已上傳：${file.name}\n\n此文件由快速上傳功能自動建立。檔案需匯出至 D 槽備份。`,
+                    content: `檔案索引建立：${file.name}\n\n此文件為檔案索引紀錄。\n實體檔案存放路徑：\`${att.path}\``,
                     category: store.filterCategory,
-                    tags: ['Upload'],
+                    tags: ['File Index'],
                     attachments: [att],
                     updatedAt: new Date().toISOString(),
                     updatedBy: store.currentUser.name
@@ -951,19 +956,22 @@
             input.value = '';
         }
 
-        function processFile(file, callback) {
-            if (file.size > 2 * 1024 * 1024) { alert("檔案過大，請小於 2MB (LocalStorage 限制)"); return; }
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                callback({
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    data: e.target.result,
-                    uploadedAt: new Date().toISOString()
-                });
-            };
-            reader.readAsDataURL(file);
+        function processFile(file, category, callback) {
+            // New Logic: Do NOT read file content. Just record metadata and path.
+            const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+            const virtualPath = `D:\\CDC_System_Data\\Files\\${category}\\${safeName}`;
+            
+            // SOP Alert
+            alert(`【系統提示：實體檔案管理】\n\n系統已記錄檔案資訊。\n\n請務必將檔案「${file.name}」手動存放至以下路徑：\n\n${virtualPath}\n\n(系統僅紀錄路徑與統計，不儲存實體檔案內容)`);
+
+            callback({
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                path: virtualPath, // Store path instead of data
+                data: null, // No base64 data
+                uploadedAt: new Date().toISOString()
+            });
         }
 
         function removeAttachment(index) {
@@ -1304,18 +1312,18 @@
                             </div>
                              <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
                                 <div class="text-xs font-bold text-slate-400 uppercase mb-2">Step 2</div>
-                                <div class="font-bold text-slate-800 mb-1">資料操作</div>
-                                <p class="text-xs text-slate-500">上傳文件、管理專案。所有檔案暫存於記憶體與瀏覽器快取。</p>
+                                <div class="font-bold text-slate-800 mb-1">目錄索引</div>
+                                <p class="text-xs text-slate-500">檔案上傳僅建立索引。實體檔案請手動存放至 D:\CDC_System_Data。</p>
                             </div>
                              <div class="p-4 bg-orange-50 rounded-lg border border-twm-orange/30">
                                 <div class="text-xs font-bold text-twm-orange uppercase mb-2">Step 3 (重要)</div>
                                 <div class="font-bold text-slate-800 mb-1">匯出至 D 槽</div>
-                                <p class="text-xs text-slate-600">務必匯出 Excel 並儲存至 <span class="font-bold">D:\CDC_System_Data</span> 以免遺失。</p>
+                                <p class="text-xs text-slate-600">務必匯出 Excel (系統紀錄檔) 並儲存至 <span class="font-bold">D:\CDC_System_Data</span>。</p>
                             </div>
                              <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
                                 <div class="text-xs font-bold text-slate-400 uppercase mb-2">Step 4</div>
                                 <div class="font-bold text-slate-800 mb-1">移轉/還原</div>
-                                <p class="text-xs text-slate-500">重新開機或換電腦時，請從 D 槽載入最新的備份檔。</p>
+                                <p class="text-xs text-slate-500">重新開機或換電腦時，請從 D 槽載入最新的 Excel 備份檔。</p>
                             </div>
                         </div>
                     </div>
