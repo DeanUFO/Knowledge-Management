@@ -1,46 +1,845 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WikiFlow KMS</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WikiFlow (TWM Style)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Markdown Parser (Simple) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- html2canvas for Charts -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        twm: {
+                            orange: '#F37021', // Taiwan Mobile Brand Color
+                            dark: '#231815',
+                            gray: '#E5E5E5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f8fafc;
-      }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f5f9; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
-      }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        
+        /* TWM Style Overrides */
+        .sidebar-active { 
+            background-color: #FFF0E5; 
+            color: #F37021; 
+            border-right: 3px solid #F37021;
+        }
+        .btn-primary {
+            background-color: #F37021;
+            color: white;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #D95E16;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(243, 112, 33, 0.3);
+        }
+        
+        .kanban-col::-webkit-scrollbar { width: 6px; }
+        .kanban-col::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "html2canvas": "https://jspm.dev/html2canvas"
-  }
-}
-</script>
 </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<body class="text-slate-800 h-screen flex overflow-hidden selection:bg-orange-100">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 shadow-sm z-20" id="sidebar">
+        <!-- Logo Area -->
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-10 h-10 bg-twm-orange rounded-lg text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-orange-200">W</div>
+            <div>
+                <div class="font-bold text-lg leading-tight tracking-tight">WikiFlow</div>
+                <div class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Knowledge System</div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto px-4 space-y-2 mt-4">
+            <div onclick="navigate('dashboard')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span>儀表板</span>
+            </div>
+            
+            <div class="px-4 mt-6 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">知識管理</div>
+            
+            <div onclick="navigate('documents', 'all')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+                <span>文件庫總覽</span>
+            </div>
+             <div onclick="navigate('documents', '機房維運')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                <i data-lucide="server" class="w-5 h-5"></i>
+                <span>機房維運</span>
+            </div>
+             <div onclick="navigate('documents', 'ISMS')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+                <span>ISMS 資安</span>
+            </div>
+
+            <div class="px-4 mt-6 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">專案與系統</div>
+
+            <div onclick="navigate('projects')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                <i data-lucide="kanban-square" class="w-5 h-5"></i>
+                <span>專案管理</span>
+            </div>
+            
+             <div onclick="navigate('database')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                <i data-lucide="database" class="w-5 h-5"></i>
+                <span>資料庫 (Excel)</span>
+            </div>
+        </nav>
+
+        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-bold border-2 border-white shadow-sm" id="user-avatar">A</div>
+                <div>
+                    <div class="text-sm font-bold text-slate-700" id="user-name">Admin User</div>
+                    <div class="text-xs text-slate-500">IT Administrator</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full bg-[#F8F9FA] relative overflow-hidden">
+        <!-- Top Bar -->
+        <header class="h-16 flex items-center px-8 justify-between shrink-0 bg-white/80 backdrop-blur border-b border-slate-200 z-10 sticky top-0">
+            <div class="flex items-center gap-2 text-sm text-slate-500 font-medium" id="breadcrumbs">
+                <!-- Breadcrumbs injected by JS -->
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                     <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                     <input type="text" placeholder="搜尋文件..." class="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-twm-orange focus:bg-white transition-all w-64">
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Scroll Area -->
+        <div id="app-content" class="flex-1 overflow-y-auto overflow-x-hidden p-8">
+            <!-- Content Injected Here -->
+        </div>
+    </main>
+
+    <!-- Hidden Input for Database Import -->
+    <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" />
+    
+    <!-- Hidden Input for Quick File Upload -->
+    <input type="file" id="quick-file-upload" class="hidden" onchange="handleQuickUpload(this)" />
+
+    <script>
+        // --- DATA STORE ---
+        const store = {
+            docs: [],
+            projects: [],
+            currentUser: { id: 'u1', name: 'Admin', role: 'ADMIN' },
+            view: 'dashboard',
+            selectedId: null,
+            filterCategory: 'all' // For document filtering
+        };
+
+        const MOCK_DOCS = [
+            { id: 'd1', title: '機房進出管制規範 v2.0', content: '# 機房進出管制\n\n所有人員進出機房需填寫登記表...\n\n- 需配戴識別證\n- 禁止攜帶飲食', category: '機房維運', tags: ['SOP', 'Security'], attachments: [], updatedAt: new Date().toISOString() },
+            { id: 'd2', title: 'ISMS 資訊安全政策公告', content: '## 113年度 ISMS 政策\n\n本公司承諾保護客戶資料...', category: 'ISMS', tags: ['Policy'], attachments: [], updatedAt: new Date().toISOString() },
+            { id: 'd3', title: '伺服器例行性維護檢核表', content: '每週一執行：\n1. 檢查硬碟燈號\n2. 確認冷氣溫度(22度)', category: '機房維運', tags: ['Checklist'], attachments: [], updatedAt: new Date().toISOString() },
+            { id: 'd4', title: '2025 產品規劃', content: '## Q1 目標\n- 完成 AI 整合\n- 效能優化', category: 'General', tags: ['Roadmap'], attachments: [], updatedAt: new Date().toISOString() }
+        ];
+
+        const MOCK_PROJECTS = [
+            { 
+                id: 'p1', name: '機房空調汰換案', status: 'In Progress', 
+                tasks: [
+                    { id: 't1', title: '廠商報價單審核', status: 'Done', priority: 'High' },
+                    { id: 't2', title: '施工排程確認', status: 'In Progress', priority: 'High' },
+                    { id: 't3', title: '完工驗收', status: 'To Do', priority: 'Medium' }
+                ] 
+            }
+        ];
+
+        // --- INIT ---
+        function init() {
+            const savedDocs = localStorage.getItem('wf_docs');
+            const savedProjects = localStorage.getItem('wf_projects');
+
+            if (savedDocs) store.docs = JSON.parse(savedDocs);
+            else store.docs = MOCK_DOCS;
+
+            if (savedProjects) store.projects = JSON.parse(savedProjects);
+            else store.projects = MOCK_PROJECTS;
+
+            navigate('dashboard');
+        }
+
+        // --- ROUTING ---
+        function navigate(view, param = null) {
+            store.view = view;
+            
+            if (view === 'documents' && typeof param === 'string') {
+                store.filterCategory = param;
+                store.selectedId = null;
+            } else {
+                store.selectedId = param;
+            }
+
+            render();
+        }
+
+        function render() {
+            const container = document.getElementById('app-content');
+            const breadcrumbs = document.getElementById('breadcrumbs');
+            
+            // Sidebar State
+            document.querySelectorAll('.nav-item').forEach(el => {
+                const clickAttr = el.getAttribute('onclick');
+                let isActive = false;
+                
+                if (store.view === 'documents') {
+                     if (clickAttr.includes(`'${store.view}', '${store.filterCategory}'`)) isActive = true;
+                } else {
+                     if (clickAttr.includes(`'${store.view}'`)) isActive = true;
+                }
+
+                if (isActive) {
+                    el.classList.add('sidebar-active');
+                    el.classList.remove('text-slate-600');
+                } else {
+                    el.classList.remove('sidebar-active');
+                    el.classList.add('text-slate-600');
+                }
+            });
+
+            // Route Logic
+            switch(store.view) {
+                case 'dashboard':
+                    breadcrumbs.innerHTML = '<span>首頁</span> <span class="mx-2">/</span> <span class="text-twm-orange font-bold">儀表板</span>';
+                    container.innerHTML = renderDashboard();
+                    break;
+                case 'documents':
+                    const catName = store.filterCategory === 'all' ? '文件庫總覽' : store.filterCategory;
+                    breadcrumbs.innerHTML = `<span>文件庫</span> <span class="mx-2">/</span> <span class="text-twm-orange font-bold">${catName}</span>`;
+                    container.innerHTML = renderDocList();
+                    break;
+                case 'doc-edit':
+                    const doc = store.docs.find(d => d.id === store.selectedId);
+                    breadcrumbs.innerHTML = `<span class="cursor-pointer hover:text-twm-orange" onclick="navigate('documents', 'all')">文件庫</span> <span class="mx-2">/</span> <span>${doc ? '編輯' : '新增文件'}</span>`;
+                    container.innerHTML = renderDocEditor(doc);
+                    break;
+                case 'doc-view':
+                    const vDoc = store.docs.find(d => d.id === store.selectedId);
+                    breadcrumbs.innerHTML = `<span class="cursor-pointer hover:text-twm-orange" onclick="navigate('documents', 'all')">文件庫</span> <span class="mx-2">/</span> <span>${vDoc?.title || 'Untitled'}</span>`;
+                    container.innerHTML = renderDocView(vDoc);
+                    break;
+                case 'projects':
+                    breadcrumbs.innerHTML = '<span>專案管理</span> <span class="mx-2">/</span> <span class="text-twm-orange font-bold">專案列表</span>';
+                    container.innerHTML = renderProjectList();
+                    break;
+                case 'project-board':
+                    const proj = store.projects.find(p => p.id === store.selectedId);
+                    breadcrumbs.innerHTML = `<span class="cursor-pointer hover:text-twm-orange" onclick="navigate('projects')">專案列表</span> <span class="mx-2">/</span> <span class="text-twm-orange font-bold">${proj?.name}</span>`;
+                    container.innerHTML = renderProjectBoard(proj);
+                    initDragAndDrop(proj.id);
+                    break;
+                case 'database':
+                    breadcrumbs.innerHTML = '<span>系統管理</span> <span class="mx-2">/</span> <span class="text-twm-orange font-bold">資料庫管理</span>';
+                    container.innerHTML = renderDatabaseManager();
+                    break;
+                default:
+                    container.innerHTML = '<div class="p-8">404 Not Found</div>';
+            }
+            
+            lucide.createIcons();
+        }
+
+        // --- VIEWS ---
+
+        function renderDashboard() {
+            return `
+                <div class="max-w-6xl mx-auto space-y-8" id="dashboard-content">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <h1 class="text-3xl font-bold text-slate-800">早安，Admin</h1>
+                            <p class="text-slate-500 mt-1">Life is for connecting. 今天的系統概況如下：</p>
+                        </div>
+                        <button onclick="downloadChart()" class="text-sm text-slate-400 hover:text-twm-orange flex items-center gap-1">
+                            <i data-lucide="camera" class="w-4 h-4"></i> 匯出報表
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-twm-orange cursor-pointer" onclick="navigate('documents', 'all')">
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">文件總數</div>
+                            <div class="text-4xl font-bold text-slate-800">${store.docs.length}</div>
+                            <div class="mt-2 text-xs text-green-600 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> 持續增長</div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-blue-500 cursor-pointer" onclick="navigate('documents', '機房維運')">
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">機房維運文件</div>
+                            <div class="text-4xl font-bold text-slate-800">${store.docs.filter(d => d.category === '機房維運').length}</div>
+                        </div>
+                         <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-purple-500 cursor-pointer" onclick="navigate('documents', 'ISMS')">
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">ISMS 資安文件</div>
+                            <div class="text-4xl font-bold text-slate-800">${store.docs.filter(d => d.category === 'ISMS').length}</div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-green-500 cursor-pointer" onclick="navigate('projects')">
+                            <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">進行中專案</div>
+                            <div class="text-4xl font-bold text-slate-800">${store.projects.length}</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-700">
+                                <i data-lucide="clock" class="w-5 h-5 text-twm-orange"></i> 最近更新文件
+                            </h2>
+                            <div class="space-y-3">
+                                ${store.docs.sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt)).slice(0, 5).map(doc => `
+                                    <div onclick="navigate('doc-view', '${doc.id}')" class="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 cursor-pointer group border border-transparent hover:border-slate-100 transition-all">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-orange-100 group-hover:text-twm-orange transition-colors">
+                                                <i data-lucide="file" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-sm text-slate-700 group-hover:text-twm-orange">${doc.title}</div>
+                                                <div class="text-xs text-slate-400">${doc.category}</div>
+                                            </div>
+                                        </div>
+                                        <span class="text-xs text-slate-400">${new Date(doc.updatedAt).toLocaleDateString()}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                         <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-700">
+                                <i data-lucide="zap" class="w-5 h-5 text-twm-orange"></i> 快速存取
+                            </h2>
+                            <div class="grid grid-cols-2 gap-4">
+                                <button onclick="triggerQuickUpload('機房維運')" class="p-4 border border-dashed border-slate-300 rounded-lg hover:border-twm-orange hover:bg-orange-50 transition-all flex flex-col items-center justify-center gap-2 group">
+                                    <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-400 group-hover:text-twm-orange"></i>
+                                    <span class="text-sm font-medium text-slate-600 group-hover:text-twm-orange">上傳維運日誌</span>
+                                </button>
+                                 <button onclick="triggerQuickUpload('ISMS')" class="p-4 border border-dashed border-slate-300 rounded-lg hover:border-twm-orange hover:bg-orange-50 transition-all flex flex-col items-center justify-center gap-2 group">
+                                    <i data-lucide="shield" class="w-6 h-6 text-slate-400 group-hover:text-twm-orange"></i>
+                                    <span class="text-sm font-medium text-slate-600 group-hover:text-twm-orange">上傳 ISMS 表單</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDocList() {
+            const filteredDocs = store.filterCategory === 'all' 
+                ? store.docs 
+                : store.docs.filter(d => d.category === store.filterCategory);
+
+            return `
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                        <div>
+                            <h1 class="text-3xl font-bold text-slate-800">${store.filterCategory === 'all' ? '文件庫' : store.filterCategory}</h1>
+                            <p class="text-slate-500 text-sm mt-1">共 ${filteredDocs.length} 份文件</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="triggerQuickUpload('${store.filterCategory}')" class="bg-white border border-slate-300 hover:border-twm-orange hover:text-twm-orange text-slate-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
+                                <i data-lucide="upload" class="w-4 h-4"></i> 上傳檔案
+                            </button>
+                            <button onclick="navigate('doc-edit')" class="btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-orange-200">
+                                <i data-lucide="plus" class="w-4 h-4"></i> 新增文件
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Category Tabs -->
+                    <div class="flex gap-1 mb-6 border-b border-slate-200 overflow-x-auto">
+                        <button onclick="navigate('documents', 'all')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${store.filterCategory === 'all' ? 'border-twm-orange text-twm-orange' : 'border-transparent text-slate-500 hover:text-slate-700'}">全部文件</button>
+                        <button onclick="navigate('documents', '機房維運')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${store.filterCategory === '機房維運' ? 'border-twm-orange text-twm-orange' : 'border-transparent text-slate-500 hover:text-slate-700'}">機房維運</button>
+                        <button onclick="navigate('documents', 'ISMS')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${store.filterCategory === 'ISMS' ? 'border-twm-orange text-twm-orange' : 'border-transparent text-slate-500 hover:text-slate-700'}">ISMS 資安</button>
+                         <button onclick="navigate('documents', 'General')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${store.filterCategory === 'General' ? 'border-twm-orange text-twm-orange' : 'border-transparent text-slate-500 hover:text-slate-700'}">一般行政</button>
+                    </div>
+                    
+                    ${filteredDocs.length === 0 ? 
+                        `<div class="text-center py-20 bg-white rounded-xl border border-slate-200 border-dashed">
+                            <div class="inline-flex p-4 bg-slate-50 rounded-full mb-4"><i data-lucide="folder-open" class="w-8 h-8 text-slate-400"></i></div>
+                            <p class="text-slate-500">此分類尚無文件</p>
+                            <button onclick="triggerQuickUpload('${store.filterCategory}')" class="text-twm-orange hover:underline text-sm font-bold mt-2">立即上傳</button>
+                        </div>` 
+                    : 
+                        `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ${filteredDocs.map(doc => `
+                                <div onclick="navigate('doc-view', '${doc.id}')" class="group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col h-48">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <span class="bg-orange-50 text-twm-orange px-2 py-1 rounded text-[10px] font-bold tracking-wide uppercase">${doc.category}</span>
+                                        ${doc.attachments.length > 0 ? '<i data-lucide="paperclip" class="w-3 h-3 text-slate-400"></i>' : ''}
+                                    </div>
+                                    <h3 class="font-bold text-lg text-slate-800 mb-2 line-clamp-2 group-hover:text-twm-orange transition-colors">${doc.title}</h3>
+                                    <p class="text-sm text-slate-400 line-clamp-3 mt-auto">${doc.content.replace(/[#*]/g, '') || '無內容預覽'}</p>
+                                </div>
+                            `).join('')}
+                        </div>`
+                    }
+                </div>
+            `;
+        }
+
+        function renderDocView(doc) {
+            if (!doc) return '<div>Doc not found</div>';
+            const htmlContent = marked.parse(doc.content);
+            return `
+                <div class="max-w-4xl mx-auto bg-white p-10 rounded-xl shadow-sm border border-slate-200 min-h-[80vh]">
+                    <div class="mb-8 border-b border-slate-100 pb-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-2 text-sm">
+                                <span class="px-2.5 py-0.5 bg-twm-orange text-white rounded text-xs font-bold">${doc.category}</span>
+                                <span class="text-slate-400">•</span>
+                                <span class="text-slate-400">Updated ${new Date(doc.updatedAt).toLocaleDateString()}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="navigate('doc-edit', '${doc.id}')" class="text-sm text-slate-500 hover:text-twm-orange flex items-center gap-1 px-3 py-1 rounded hover:bg-orange-50 transition-colors">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i> 編輯
+                                </button>
+                            </div>
+                        </div>
+                        <h1 class="text-4xl font-bold text-slate-900 leading-tight">${doc.title}</h1>
+                    </div>
+                    
+                    <article class="prose prose-slate max-w-none prose-headings:font-bold prose-a:text-twm-orange">
+                        ${htmlContent}
+                    </article>
+
+                    ${doc.attachments && doc.attachments.length > 0 ? `
+                        <div class="mt-12 pt-6 border-t border-slate-200">
+                            <h3 class="text-sm font-bold text-slate-500 uppercase mb-4 flex items-center gap-2">
+                                <i data-lucide="folder-down" class="w-4 h-4"></i> 附件下載區
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                ${doc.attachments.map(att => `
+                                    <div class="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-twm-orange hover:bg-orange-50 transition-all group bg-slate-50">
+                                        <div class="flex items-center gap-3 overflow-hidden">
+                                            <div class="bg-white p-2 rounded shadow-sm text-twm-orange">
+                                                <i data-lucide="file" class="w-5 h-5"></i>
+                                            </div>
+                                            <div>
+                                                <div class="truncate text-sm font-bold text-slate-700 group-hover:text-twm-orange">${att.name}</div>
+                                                <div class="text-xs text-slate-400">${Math.round(att.size/1024)} KB</div>
+                                            </div>
+                                        </div>
+                                        <a href="${att.data}" download="${att.name}" class="text-slate-400 hover:text-twm-orange p-2 rounded-full hover:bg-white transition-colors">
+                                            <i data-lucide="download" class="w-5 h-5"></i>
+                                        </a>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderDocEditor(doc) {
+            const isNew = !doc;
+            const data = doc || { title: '', content: '', category: store.filterCategory === 'all' ? 'General' : store.filterCategory, tags: [], attachments: [] };
+            
+            // Temporary Edit State
+            window.currentEditDoc = JSON.parse(JSON.stringify(data)); 
+
+            return `
+                <div class="max-w-4xl mx-auto bg-white p-10 rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
+                        <h2 class="text-xl font-bold text-slate-400 flex items-center gap-2">
+                             ${isNew ? '<i data-lucide="file-plus" class="w-5 h-5"></i> 新增文件' : '<i data-lucide="edit" class="w-5 h-5"></i> 編輯文件'}
+                        </h2>
+                        <div class="flex gap-3">
+                            <button onclick="navigate('${isNew ? 'documents' : 'doc-view'}', '${isNew ? store.filterCategory : doc.id}')" class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg font-medium transition-colors">取消</button>
+                            <button onclick="saveDoc('${isNew ? '' : doc.id}')" class="btn-primary px-6 py-2 rounded-lg font-bold shadow-lg shadow-orange-200">儲存文件</button>
+                        </div>
+                    </div>
+
+                    <input type="text" id="edit-title" value="${data.title}" placeholder="請輸入文件標題..." class="text-3xl font-bold border-none focus:ring-0 px-0 placeholder-slate-300 w-full mb-6 text-slate-800">
+                    
+                    <div class="grid grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">分類 Category</label>
+                            <select id="edit-category" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-700 font-medium focus:ring-2 focus:ring-twm-orange focus:border-transparent outline-none">
+                                <option value="General" ${data.category === 'General' ? 'selected' : ''}>General 一般行政</option>
+                                <option value="機房維運" ${data.category === '機房維運' ? 'selected' : ''}>機房維運</option>
+                                <option value="ISMS" ${data.category === 'ISMS' ? 'selected' : ''}>ISMS 資安管理</option>
+                                <option value="HR" ${data.category === 'HR' ? 'selected' : ''}>HR 人資規章</option>
+                            </select>
+                        </div>
+                        <div>
+                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">附件 Attachment</label>
+                             <button onclick="document.getElementById('file-upload-input').click()" class="w-full text-left px-3 py-2 bg-slate-50 border border-slate-200 border-dashed rounded-lg text-slate-500 hover:text-twm-orange hover:border-twm-orange hover:bg-orange-50 transition-all text-sm flex items-center gap-2">
+                                <i data-lucide="upload" class="w-4 h-4"></i> 點擊上傳檔案
+                             </button>
+                             <input type="file" id="file-upload-input" class="hidden" onchange="handleFileUpload(this)">
+                        </div>
+                    </div>
+
+                    <textarea id="edit-content" class="flex-1 w-full resize-none border-none focus:ring-0 p-4 bg-slate-50 rounded-lg text-base leading-relaxed text-slate-700 placeholder-slate-400 outline-none mb-6" placeholder="在此輸入內容 (支援 Markdown)...">${data.content}</textarea>
+
+                    <div id="attachments-list" class="space-y-2">
+                        ${renderAttachmentsList(data.attachments)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAttachmentsList(attachments) {
+            if (!attachments || attachments.length === 0) return '';
+            return attachments.map((att, idx) => `
+                <div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="bg-white p-1.5 rounded text-twm-orange shadow-sm"><i data-lucide="file" class="w-4 h-4"></i></div>
+                        <span class="text-sm font-medium text-slate-700 truncate">${att.name}</span>
+                        <span class="text-xs text-slate-400">(${Math.round(att.size/1024)} KB)</span>
+                    </div>
+                    <button onclick="removeAttachment(${idx})" class="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // --- ATTACHMENT LOGIC ---
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            processFile(file, (att) => {
+                window.currentEditDoc.attachments.push(att);
+                document.getElementById('attachments-list').innerHTML = renderAttachmentsList(window.currentEditDoc.attachments);
+                lucide.createIcons();
+            });
+        }
+
+        // Quick Upload logic for the button in Document List
+        function triggerQuickUpload(category) {
+            store.filterCategory = category === 'all' ? 'General' : category; // Set context
+            document.getElementById('quick-file-upload').click();
+        }
+
+        function handleQuickUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            processFile(file, (att) => {
+                // Auto-create document
+                const newDoc = {
+                    id: 'd' + Date.now(),
+                    title: file.name,
+                    content: `檔案已上傳：${file.name}\n\n此文件由快速上傳功能自動建立。`,
+                    category: store.filterCategory,
+                    tags: ['Upload'],
+                    attachments: [att],
+                    updatedAt: new Date().toISOString()
+                };
+                store.docs.unshift(newDoc);
+                saveToStorage();
+                navigate('doc-view', newDoc.id); // Go to view
+            });
+            input.value = ''; // Reset
+        }
+
+        function processFile(file, callback) {
+            if (file.size > 2 * 1024 * 1024) { alert("檔案過大，請小於 2MB (LocalStorage 限制)"); return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                callback({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    data: e.target.result,
+                    uploadedAt: new Date().toISOString()
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeAttachment(index) {
+            window.currentEditDoc.attachments.splice(index, 1);
+            document.getElementById('attachments-list').innerHTML = renderAttachmentsList(window.currentEditDoc.attachments);
+            lucide.createIcons();
+        }
+
+        function saveDoc(id) {
+            const title = document.getElementById('edit-title').value;
+            const content = document.getElementById('edit-content').value;
+            const category = document.getElementById('edit-category').value;
+
+            if (!title) return alert('請輸入標題');
+
+            const docData = {
+                ...window.currentEditDoc,
+                id: id || 'd' + Date.now(),
+                title,
+                content,
+                category,
+                updatedAt: new Date().toISOString()
+            };
+
+            if (id) {
+                const idx = store.docs.findIndex(d => d.id === id);
+                store.docs[idx] = docData;
+            } else {
+                store.docs.unshift(docData);
+            }
+            
+            saveToStorage();
+            navigate('doc-view', docData.id);
+        }
+
+        // --- CHART DOWNLOAD ---
+        function downloadChart() {
+            const element = document.getElementById('dashboard-content');
+            html2canvas(element).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `report_${new Date().toISOString().slice(0,10)}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // --- PROJECT VIEWS ---
+        function renderProjectList() {
+            return `
+                <div class="max-w-6xl mx-auto">
+                     <div class="flex justify-between items-center mb-8">
+                        <h1 class="text-3xl font-bold text-slate-800">專案看板</h1>
+                        <button onclick="createProject()" class="btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-orange-200">
+                            <i data-lucide="plus" class="w-4 h-4"></i> 新增專案
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${store.projects.map(p => `
+                            <div onclick="navigate('project-board', '${p.id}')" class="group bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-all cursor-pointer relative overflow-hidden">
+                                <div class="absolute top-0 left-0 w-2 h-full ${p.status === 'Active' ? 'bg-twm-orange' : 'bg-slate-300'}"></div>
+                                <div class="pl-4">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h3 class="font-bold text-xl text-slate-800 group-hover:text-twm-orange transition-colors">${p.name}</h3>
+                                        <span class="px-2 py-1 bg-slate-100 rounded text-xs font-bold text-slate-500">${p.status}</span>
+                                    </div>
+                                    <div class="flex items-center gap-6 text-sm text-slate-500">
+                                        <div class="flex items-center gap-1"><i data-lucide="list-todo" class="w-4 h-4"></i> ${p.tasks.length} 任務</div>
+                                        <div class="flex items-center gap-1"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-500"></i> ${p.tasks.filter(t => t.status === 'Done').length} 完成</div>
+                                    </div>
+                                    <div class="mt-4 w-full bg-slate-100 rounded-full h-1.5">
+                                        <div class="bg-twm-orange h-1.5 rounded-full" style="width: ${p.tasks.length ? (p.tasks.filter(t => t.status === 'Done').length / p.tasks.length) * 100 : 0}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createProject() {
+            const name = prompt("請輸入專案名稱：");
+            if(name) {
+                const newProj = {
+                    id: 'p' + Date.now(),
+                    name: name,
+                    status: 'Active',
+                    tasks: []
+                };
+                store.projects.push(newProj);
+                saveToStorage();
+                navigate('project-board', newProj.id);
+            }
+        }
+
+        function renderProjectBoard(project) {
+            if(!project) return 'Project not found';
+            const statuses = ['To Do', 'In Progress', 'Done'];
+            
+            return `
+                <div class="flex flex-col h-full overflow-hidden">
+                    <div class="h-16 flex items-center justify-between shrink-0 mb-4">
+                        <div class="flex items-center gap-4">
+                            <h2 class="font-bold text-2xl text-slate-800">${project.name}</h2>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Active</span>
+                        </div>
+                        <button onclick="addTask('${project.id}')" class="btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm">
+                             <i data-lucide="plus" class="w-4 h-4"></i> 新增任務
+                        </button>
+                    </div>
+                    
+                    <div class="flex-1 overflow-x-auto overflow-y-hidden pb-4">
+                        <div class="flex h-full gap-6 w-max">
+                            ${statuses.map(status => `
+                                <div class="w-80 flex flex-col bg-slate-100 rounded-xl p-4 border border-slate-200" ondrop="drop(event, '${status}')" ondragover="allowDrop(event)">
+                                    <div class="flex justify-between items-center mb-4 px-1">
+                                        <span class="text-sm font-bold text-slate-600 uppercase tracking-wide flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full ${status === 'Done' ? 'bg-green-500' : (status === 'In Progress' ? 'bg-twm-orange' : 'bg-slate-400')}"></span>
+                                            ${status}
+                                        </span>
+                                        <span class="text-xs bg-white px-2 py-0.5 rounded-full text-slate-500 font-bold border border-slate-200 shadow-sm">${project.tasks.filter(t => t.status === status).length}</span>
+                                    </div>
+                                    <div class="flex-1 overflow-y-auto kanban-col space-y-3 pr-1">
+                                        ${project.tasks.filter(t => t.status === status).map(task => `
+                                            <div id="${task.id}" draggable="true" ondragstart="drag(event)" class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 cursor-move hover:shadow-md hover:border-twm-orange transition-all group relative">
+                                                <div class="flex justify-between items-start mb-2">
+                                                    <span class="text-[10px] px-2 py-0.5 rounded font-bold ${task.priority === 'High' ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-500'}">${task.priority}</span>
+                                                    <button onclick="deleteTask('${project.id}', '${task.id}')" class="text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                                </div>
+                                                <div class="text-sm font-bold text-slate-800 leading-snug">${task.title}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- KANBAN LOGIC ---
+        function allowDrop(ev) { ev.preventDefault(); }
+        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+        function drop(ev, newStatus) {
+            ev.preventDefault();
+            const taskId = ev.dataTransfer.getData("text");
+            const proj = store.projects.find(p => p.id === store.selectedId);
+            const task = proj.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = newStatus;
+                saveToStorage();
+                render(); 
+            }
+        }
+        function addTask(pid) {
+            const title = prompt("任務標題:");
+            if (title) {
+                const proj = store.projects.find(p => p.id === pid);
+                proj.tasks.push({ id: 't'+Date.now(), title, status: 'To Do', priority: 'Medium' });
+                saveToStorage();
+                render();
+            }
+        }
+        function deleteTask(pid, tid) {
+            if(!confirm("刪除此任務?")) return;
+            const proj = store.projects.find(p => p.id === pid);
+            proj.tasks = proj.tasks.filter(t => t.id !== tid);
+            saveToStorage();
+            render();
+        }
+
+        // --- EXCEL DATABASE MANAGER ---
+        function renderDatabaseManager() {
+            return `
+                 <div class="max-w-2xl mx-auto">
+                    <h1 class="text-3xl font-bold mb-8 text-slate-800">資料庫管理</h1>
+                    
+                    <div class="bg-white rounded-xl border border-slate-200 p-8 shadow-sm mb-6">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                                <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-800">匯入資料 (Import)</h3>
+                                <p class="text-sm text-slate-500">從 Excel (.xlsx) 載入資料以覆蓋目前系統。</p>
+                            </div>
+                        </div>
+                        <button onclick="document.getElementById('excel-upload').click()" class="w-full bg-slate-50 border border-slate-300 hover:bg-slate-100 text-slate-700 px-4 py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+                             <i data-lucide="upload" class="w-4 h-4"></i> 選擇 Excel 檔案
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                                <i data-lucide="download-cloud" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-800">匯出資料 (Export)</h3>
+                                <p class="text-sm text-slate-500">備份所有文件、專案與任務至 Excel。</p>
+                            </div>
+                        </div>
+                        <button onclick="exportToExcel()" class="w-full btn-primary px-4 py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-orange-200">
+                             <i data-lucide="download" class="w-4 h-4"></i> 下載備份 (.xlsx)
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- EXCEL LOGIC ---
+        document.getElementById('excel-upload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                if (workbook.Sheets['Docs']) {
+                    const rawDocs = XLSX.utils.sheet_to_json(workbook.Sheets['Docs']);
+                    store.docs = rawDocs.map(d => ({
+                        ...d,
+                        tags: d.tags ? JSON.parse(d.tags) : [],
+                        attachments: d.attachments ? JSON.parse(d.attachments) : []
+                    }));
+                }
+
+                if (workbook.Sheets['Projects']) {
+                    const rawProjects = XLSX.utils.sheet_to_json(workbook.Sheets['Projects']);
+                    store.projects = rawProjects.map(p => ({
+                        ...p,
+                        tasks: p.tasks ? JSON.parse(p.tasks) : []
+                    }));
+                }
+
+                saveToStorage();
+                alert('資料庫匯入成功！');
+                navigate('dashboard');
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            const serializedDocs = store.docs.map(d => ({
+                ...d,
+                tags: JSON.stringify(d.tags),
+                attachments: JSON.stringify(d.attachments)
+            }));
+            const wsDocs = XLSX.utils.json_to_sheet(serializedDocs);
+            XLSX.utils.book_append_sheet(wb, wsDocs, "Docs");
+
+            const serializedProjects = store.projects.map(p => ({
+                ...p,
+                tasks: JSON.stringify(p.tasks)
+            }));
+            const wsProjects = XLSX.utils.json_to_sheet(serializedProjects);
+            XLSX.utils.book_append_sheet(wb, wsProjects, "Projects");
+
+            XLSX.writeFile(wb, `WikiFlow_Backup_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('wf_docs', JSON.stringify(store.docs));
+            localStorage.setItem('wf_projects', JSON.stringify(store.projects));
+        }
+
+        // Start
+        init();
+    </script>
+</body>
 </html>
