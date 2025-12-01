@@ -1,5 +1,5 @@
 {
-  "name": "WikiFlow - SMB Knowledge Management",
-  "description": "A lightweight, AI-powered Knowledge Management System designed for small teams. Features document versioning, role-based access control, and Gemini-powered semantic search and summarization.",
+  "name": "雲端資料中心部知識管理系統",
+  "description": "專為雲端資料中心部設計的 AI 知識管理系統，具備版本控制、權限管理與專案看板功能。",
   "requestFramePermissions": []
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WikiFlow (TWM Style)</title>
+    <title>雲端資料中心部 (TWM Style)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS for Excel -->
@@ -21,7 +21,11 @@
                 extend: {
                     colors: {
                         twm: {
-                            orange: '#F37021', // Taiwan Mobile Brand Color
+                            orange: '#F37021', // TWM Orange
+                            red: '#E30613',    // TWM Red
+                            purple: '#84227C', // TWM Purple
+                            blue: '#005CAF',   // TWM Blue
+                            green: '#009944',  // TWM Green
                             dark: '#231815',
                             gray: '#E5E5E5'
                         }
@@ -54,86 +58,131 @@
         
         .kanban-col::-webkit-scrollbar { width: 6px; }
         .kanban-col::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
+
+        /* Login Background */
+        .login-bg {
+            background: linear-gradient(135deg, #FFF0E5 0%, #FFFFFF 100%);
+        }
     </style>
 </head>
-<body class="text-slate-800 h-screen flex overflow-hidden selection:bg-orange-100">
+<body class="text-slate-800 h-screen overflow-hidden selection:bg-orange-100 bg-[#F8F9FA]">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 shadow-sm z-20" id="sidebar">
-        <!-- Logo Area -->
-        <div class="p-6 flex items-center gap-3">
-            <div class="w-10 h-10 bg-twm-orange rounded-lg text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-orange-200">W</div>
-            <div>
-                <div class="font-bold text-lg leading-tight tracking-tight">WikiFlow</div>
-                <div class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Knowledge System</div>
-            </div>
-        </div>
-        
-        <nav class="flex-1 overflow-y-auto px-4 space-y-2 mt-4">
-            <div onclick="navigate('dashboard')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
-                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                <span>儀表板</span>
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 z-50 login-bg flex flex-col items-center justify-center hidden">
+        <div class="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+            <div class="flex flex-col items-center mb-8">
+                <!-- TWM Official Logo -->
+                <div class="w-48 mb-6">
+                    <img src="https://www.taiwanmobile.com/content/dam/twm/images/common/logo_twm.svg" alt="Taiwan Mobile Logo" class="w-full h-auto">
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">雲端資料中心部</h1>
+                <p class="text-slate-500 text-sm mt-1">知識與專案管理系統</p>
             </div>
             
-            <div class="px-4 mt-6 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">知識管理</div>
-            
-            <div onclick="navigate('documents', 'all')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
-                <i data-lucide="file-text" class="w-5 h-5"></i>
-                <span>文件庫總覽</span>
-            </div>
-             <div onclick="navigate('documents', '機房維運')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
-                <i data-lucide="server" class="w-5 h-5"></i>
-                <span>機房維運</span>
-            </div>
-             <div onclick="navigate('documents', 'ISMS')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
-                <i data-lucide="shield-check" class="w-5 h-5"></i>
-                <span>ISMS 資安</span>
-            </div>
-
-            <div class="px-4 mt-6 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">專案與系統</div>
-
-            <div onclick="navigate('projects')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
-                <i data-lucide="kanban-square" class="w-5 h-5"></i>
-                <span>專案管理</span>
-            </div>
-            
-             <div onclick="navigate('database')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
-                <i data-lucide="database" class="w-5 h-5"></i>
-                <span>資料庫 (Excel)</span>
-            </div>
-        </nav>
-
-        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
-            <div class="flex items-center gap-3 px-2">
-                <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-bold border-2 border-white shadow-sm" id="user-avatar">A</div>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <div class="text-sm font-bold text-slate-700" id="user-name">Admin User</div>
-                    <div class="text-xs text-slate-500">IT Administrator</div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">帳號 Username</label>
+                    <input type="text" id="login-username" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-twm-orange outline-none" placeholder="輸入帳號">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">密碼 Password</label>
+                    <input type="password" id="login-password" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-700 font-medium focus:ring-2 focus:ring-twm-orange outline-none" placeholder="輸入密碼">
+                </div>
+                <div id="login-error" class="text-red-500 text-sm text-center hidden">帳號或密碼錯誤</div>
+                <button type="submit" class="w-full btn-primary py-3 rounded-lg font-bold text-lg shadow-lg shadow-orange-200 mt-2">登入系統</button>
+            </form>
+        </div>
+        <div class="mt-8 text-slate-400 text-xs">
+            © 2025 CDC System. All rights reserved.
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app-container" class="flex h-full hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 shadow-sm z-20" id="sidebar">
+            <!-- Logo Area -->
+            <div class="p-6">
+                <div class="mb-4">
+                    <img src="https://www.taiwanmobile.com/content/dam/twm/images/common/logo_twm.svg" alt="TWM" class="h-8 w-auto">
+                </div>
+                <div>
+                    <div class="font-bold text-lg leading-tight tracking-tight text-slate-800">雲端資料中心部</div>
+                    <div class="text-[10px] text-twm-orange font-bold tracking-widest uppercase">TWM CDC System</div>
                 </div>
             </div>
-        </div>
-    </aside>
+            
+            <nav class="flex-1 overflow-y-auto px-4 space-y-2 mt-4">
+                <div onclick="navigate('dashboard')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    <span>儀表板</span>
+                </div>
+                
+                <div class="px-4 mt-6 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">知識管理</div>
+                
+                <div onclick="navigate('documents', 'all')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                    <span>文件庫總覽</span>
+                </div>
+                 <div onclick="navigate('documents', '機房維運')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                    <i data-lucide="server" class="w-5 h-5"></i>
+                    <span>機房維運</span>
+                </div>
+                 <div onclick="navigate('documents', 'ISMS')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                    <span>ISMS 資安</span>
+                </div>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col h-full bg-[#F8F9FA] relative overflow-hidden">
-        <!-- Top Bar -->
-        <header class="h-16 flex items-center px-8 justify-between shrink-0 bg-white/80 backdrop-blur border-b border-slate-200 z-10 sticky top-0">
-            <div class="flex items-center gap-2 text-sm text-slate-500 font-medium" id="breadcrumbs">
-                <!-- Breadcrumbs injected by JS -->
-            </div>
-            <div class="flex items-center gap-4">
-                <div class="relative">
-                     <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
-                     <input type="text" placeholder="搜尋文件..." class="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-twm-orange focus:bg-white transition-all w-64">
+                <div class="px-4 mt-6 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">專案與系統</div>
+
+                <div onclick="navigate('projects')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                    <i data-lucide="kanban-square" class="w-5 h-5"></i>
+                    <span>專案管理</span>
+                </div>
+                
+                 <div onclick="navigate('database')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors">
+                    <i data-lucide="database" class="w-5 h-5"></i>
+                    <span>資料庫與備份</span>
+                </div>
+                 <div onclick="navigate('users')" class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg cursor-pointer hover:bg-slate-50 text-slate-600 transition-colors" id="nav-users">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                    <span>帳號管理</span>
+                </div>
+            </nav>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+                <div class="flex items-center gap-3 px-2">
+                    <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-bold border-2 border-white shadow-sm" id="user-avatar">A</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-bold text-slate-700 truncate" id="user-name">Guest</div>
+                        <div class="text-xs text-slate-500 truncate" id="user-role">Not Logged In</div>
+                    </div>
+                    <button onclick="logout()" class="text-slate-400 hover:text-twm-orange"><i data-lucide="log-out" class="w-4 h-4"></i></button>
                 </div>
             </div>
-        </header>
+        </aside>
 
-        <!-- Content Scroll Area -->
-        <div id="app-content" class="flex-1 overflow-y-auto overflow-x-hidden p-8">
-            <!-- Content Injected Here -->
-        </div>
-    </main>
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col h-full bg-[#F8F9FA] relative overflow-hidden">
+            <!-- Top Bar -->
+            <header class="h-16 flex items-center px-8 justify-between shrink-0 bg-white/80 backdrop-blur border-b border-slate-200 z-10 sticky top-0">
+                <div class="flex items-center gap-2 text-sm text-slate-500 font-medium" id="breadcrumbs">
+                    <!-- Breadcrumbs injected by JS -->
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                         <input type="text" placeholder="搜尋文件..." class="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-twm-orange focus:bg-white transition-all w-64">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Scroll Area -->
+            <div id="app-content" class="flex-1 overflow-y-auto overflow-x-hidden p-8">
+                <!-- Content Injected Here -->
+            </div>
+        </main>
+    </div>
 
     <!-- Hidden Input for Database Import -->
     <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" />
@@ -146,17 +195,18 @@
         const store = {
             docs: [],
             projects: [],
-            currentUser: { id: 'u1', name: 'Admin', role: 'ADMIN' },
+            users: [],
+            history: [], // { id, docId, title, content, modifiedBy, modifiedAt }
+            currentUser: null,
             view: 'dashboard',
             selectedId: null,
-            filterCategory: 'all' // For document filtering
+            filterCategory: 'all'
         };
 
         const MOCK_DOCS = [
             { id: 'd1', title: '機房進出管制規範 v2.0', content: '# 機房進出管制\n\n所有人員進出機房需填寫登記表...\n\n- 需配戴識別證\n- 禁止攜帶飲食', category: '機房維運', tags: ['SOP', 'Security'], attachments: [], updatedAt: new Date().toISOString() },
             { id: 'd2', title: 'ISMS 資訊安全政策公告', content: '## 113年度 ISMS 政策\n\n本公司承諾保護客戶資料...', category: 'ISMS', tags: ['Policy'], attachments: [], updatedAt: new Date().toISOString() },
-            { id: 'd3', title: '伺服器例行性維護檢核表', content: '每週一執行：\n1. 檢查硬碟燈號\n2. 確認冷氣溫度(22度)', category: '機房維運', tags: ['Checklist'], attachments: [], updatedAt: new Date().toISOString() },
-            { id: 'd4', title: '2025 產品規劃', content: '## Q1 目標\n- 完成 AI 整合\n- 效能優化', category: 'General', tags: ['Roadmap'], attachments: [], updatedAt: new Date().toISOString() }
+            { id: 'd3', title: '伺服器例行性維護檢核表', content: '每週一執行：\n1. 檢查硬碟燈號\n2. 確認冷氣溫度(22度)', category: '機房維運', tags: ['Checklist'], attachments: [], updatedAt: new Date().toISOString() }
         ];
 
         const MOCK_PROJECTS = [
@@ -164,24 +214,85 @@
                 id: 'p1', name: '機房空調汰換案', status: 'In Progress', 
                 tasks: [
                     { id: 't1', title: '廠商報價單審核', status: 'Done', priority: 'High' },
-                    { id: 't2', title: '施工排程確認', status: 'In Progress', priority: 'High' },
-                    { id: 't3', title: '完工驗收', status: 'To Do', priority: 'Medium' }
+                    { id: 't2', title: '施工排程確認', status: 'In Progress', priority: 'High' }
                 ] 
             }
         ];
 
+        const MOCK_USERS = [
+            { id: 'u1', username: 'admin', password: 'admin', name: '系統管理員', role: 'ADMIN' },
+            { id: 'u2', username: 'user', password: 'user', name: '一般職員', role: 'USER' }
+        ];
+
         // --- INIT ---
         function init() {
+            // Load Data
             const savedDocs = localStorage.getItem('wf_docs');
             const savedProjects = localStorage.getItem('wf_projects');
+            const savedUsers = localStorage.getItem('wf_users');
+            const savedHistory = localStorage.getItem('wf_history');
 
-            if (savedDocs) store.docs = JSON.parse(savedDocs);
-            else store.docs = MOCK_DOCS;
+            store.docs = savedDocs ? JSON.parse(savedDocs) : MOCK_DOCS;
+            store.projects = savedProjects ? JSON.parse(savedProjects) : MOCK_PROJECTS;
+            store.users = savedUsers ? JSON.parse(savedUsers) : MOCK_USERS;
+            store.history = savedHistory ? JSON.parse(savedHistory) : [];
 
-            if (savedProjects) store.projects = JSON.parse(savedProjects);
-            else store.projects = MOCK_PROJECTS;
+            // Check Session
+            const sessionUser = sessionStorage.getItem('wf_session');
+            if (sessionUser) {
+                store.currentUser = JSON.parse(sessionUser);
+                showApp();
+            } else {
+                showLogin();
+            }
+        }
+
+        // --- AUTH ---
+        function showLogin() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            
+            // Update Sidebar User Info
+            document.getElementById('user-avatar').innerText = store.currentUser.name[0];
+            document.getElementById('user-name').innerText = store.currentUser.name;
+            document.getElementById('user-role').innerText = store.currentUser.role;
+
+            // Hide/Show Admin Menus
+            if (store.currentUser.role !== 'ADMIN') {
+                document.getElementById('nav-users').classList.add('hidden');
+            } else {
+                document.getElementById('nav-users').classList.remove('hidden');
+            }
 
             navigate('dashboard');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-password').value;
+            
+            const user = store.users.find(user => user.username === u && user.password === p);
+            
+            if (user) {
+                store.currentUser = user;
+                sessionStorage.setItem('wf_session', JSON.stringify(user));
+                document.getElementById('login-error').classList.add('hidden');
+                showApp();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('wf_session');
+            store.currentUser = null;
+            showLogin();
         }
 
         // --- ROUTING ---
@@ -257,6 +368,10 @@
                     breadcrumbs.innerHTML = '<span>系統管理</span> <span class="mx-2">/</span> <span class="text-twm-orange font-bold">資料庫管理</span>';
                     container.innerHTML = renderDatabaseManager();
                     break;
+                case 'users':
+                    breadcrumbs.innerHTML = '<span>系統管理</span> <span class="mx-2">/</span> <span class="text-twm-orange font-bold">帳號管理</span>';
+                    container.innerHTML = renderUserManager();
+                    break;
                 default:
                     container.innerHTML = '<div class="p-8">404 Not Found</div>';
             }
@@ -271,7 +386,7 @@
                 <div class="max-w-6xl mx-auto space-y-8" id="dashboard-content">
                     <div class="flex justify-between items-end">
                         <div>
-                            <h1 class="text-3xl font-bold text-slate-800">早安，Admin</h1>
+                            <h1 class="text-3xl font-bold text-slate-800">早安，${store.currentUser.name}</h1>
                             <p class="text-slate-500 mt-1">Life is for connecting. 今天的系統概況如下：</p>
                         </div>
                         <button onclick="downloadChart()" class="text-sm text-slate-400 hover:text-twm-orange flex items-center gap-1">
@@ -283,7 +398,6 @@
                         <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-twm-orange cursor-pointer" onclick="navigate('documents', 'all')">
                             <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">文件總數</div>
                             <div class="text-4xl font-bold text-slate-800">${store.docs.length}</div>
-                            <div class="mt-2 text-xs text-green-600 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> 持續增長</div>
                         </div>
                         <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-blue-500 cursor-pointer" onclick="navigate('documents', '機房維運')">
                             <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">機房維運文件</div>
@@ -399,55 +513,117 @@
         function renderDocView(doc) {
             if (!doc) return '<div>Doc not found</div>';
             const htmlContent = marked.parse(doc.content);
-            return `
-                <div class="max-w-4xl mx-auto bg-white p-10 rounded-xl shadow-sm border border-slate-200 min-h-[80vh]">
-                    <div class="mb-8 border-b border-slate-100 pb-6">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex items-center gap-2 text-sm">
-                                <span class="px-2.5 py-0.5 bg-twm-orange text-white rounded text-xs font-bold">${doc.category}</span>
-                                <span class="text-slate-400">•</span>
-                                <span class="text-slate-400">Updated ${new Date(doc.updatedAt).toLocaleDateString()}</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="navigate('doc-edit', '${doc.id}')" class="text-sm text-slate-500 hover:text-twm-orange flex items-center gap-1 px-3 py-1 rounded hover:bg-orange-50 transition-colors">
-                                    <i data-lucide="edit-3" class="w-4 h-4"></i> 編輯
-                                </button>
-                            </div>
-                        </div>
-                        <h1 class="text-4xl font-bold text-slate-900 leading-tight">${doc.title}</h1>
-                    </div>
-                    
-                    <article class="prose prose-slate max-w-none prose-headings:font-bold prose-a:text-twm-orange">
-                        ${htmlContent}
-                    </article>
+            const historyCount = store.history.filter(h => h.docId === doc.id).length;
 
-                    ${doc.attachments && doc.attachments.length > 0 ? `
-                        <div class="mt-12 pt-6 border-t border-slate-200">
-                            <h3 class="text-sm font-bold text-slate-500 uppercase mb-4 flex items-center gap-2">
-                                <i data-lucide="folder-down" class="w-4 h-4"></i> 附件下載區
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                ${doc.attachments.map(att => `
-                                    <div class="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-twm-orange hover:bg-orange-50 transition-all group bg-slate-50">
-                                        <div class="flex items-center gap-3 overflow-hidden">
-                                            <div class="bg-white p-2 rounded shadow-sm text-twm-orange">
-                                                <i data-lucide="file" class="w-5 h-5"></i>
-                                            </div>
-                                            <div>
-                                                <div class="truncate text-sm font-bold text-slate-700 group-hover:text-twm-orange">${att.name}</div>
-                                                <div class="text-xs text-slate-400">${Math.round(att.size/1024)} KB</div>
-                                            </div>
-                                        </div>
-                                        <a href="${att.data}" download="${att.name}" class="text-slate-400 hover:text-twm-orange p-2 rounded-full hover:bg-white transition-colors">
-                                            <i data-lucide="download" class="w-5 h-5"></i>
-                                        </a>
+            return `
+                <div class="flex gap-6 h-full">
+                    <div class="flex-1 overflow-y-auto">
+                        <div class="max-w-4xl mx-auto bg-white p-10 rounded-xl shadow-sm border border-slate-200 min-h-[80vh]">
+                            <div class="mb-8 border-b border-slate-100 pb-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <span class="px-2.5 py-0.5 bg-twm-orange text-white rounded text-xs font-bold">${doc.category}</span>
+                                        <span class="text-slate-400">•</span>
+                                        <span class="text-slate-400">Updated ${new Date(doc.updatedAt).toLocaleString()} by ${doc.updatedBy || 'Unknown'}</span>
                                     </div>
-                                `).join('')}
+                                    <div class="flex gap-2">
+                                        <button onclick="toggleHistoryPanel()" class="text-sm text-slate-500 hover:text-twm-orange flex items-center gap-1 px-3 py-1 rounded hover:bg-orange-50 transition-colors">
+                                            <i data-lucide="history" class="w-4 h-4"></i> 版本 (${historyCount})
+                                        </button>
+                                        <button onclick="navigate('doc-edit', '${doc.id}')" class="text-sm text-slate-500 hover:text-twm-orange flex items-center gap-1 px-3 py-1 rounded hover:bg-orange-50 transition-colors">
+                                            <i data-lucide="edit-3" class="w-4 h-4"></i> 編輯
+                                        </button>
+                                    </div>
+                                </div>
+                                <h1 class="text-4xl font-bold text-slate-900 leading-tight">${doc.title}</h1>
                             </div>
+                            
+                            <article class="prose prose-slate max-w-none prose-headings:font-bold prose-a:text-twm-orange">
+                                ${htmlContent}
+                            </article>
+
+                            ${doc.attachments && doc.attachments.length > 0 ? `
+                                <div class="mt-12 pt-6 border-t border-slate-200">
+                                    <h3 class="text-sm font-bold text-slate-500 uppercase mb-4 flex items-center gap-2">
+                                        <i data-lucide="folder-down" class="w-4 h-4"></i> 附件下載區
+                                    </h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        ${doc.attachments.map(att => `
+                                            <div class="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:border-twm-orange hover:bg-orange-50 transition-all group bg-slate-50">
+                                                <div class="flex items-center gap-3 overflow-hidden">
+                                                    <div class="bg-white p-2 rounded shadow-sm text-twm-orange">
+                                                        <i data-lucide="file" class="w-5 h-5"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="truncate text-sm font-bold text-slate-700 group-hover:text-twm-orange">${att.name}</div>
+                                                        <div class="text-xs text-slate-400">${Math.round(att.size/1024)} KB</div>
+                                                    </div>
+                                                </div>
+                                                <a href="${att.data}" download="${att.name}" class="text-slate-400 hover:text-twm-orange p-2 rounded-full hover:bg-white transition-colors">
+                                                    <i data-lucide="download" class="w-5 h-5"></i>
+                                                </a>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
-                    ` : ''}
+                    </div>
+
+                    <!-- History Panel (Hidden by default) -->
+                    <div id="history-panel" class="w-80 bg-white border-l border-slate-200 p-6 hidden flex-col shadow-lg">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-lg text-slate-800">版本紀錄</h3>
+                            <button onclick="toggleHistoryPanel()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto space-y-4">
+                            ${store.history.filter(h => h.docId === doc.id).sort((a,b) => new Date(b.modifiedAt) - new Date(a.modifiedAt)).map(h => `
+                                <div class="p-3 rounded-lg border border-slate-100 bg-slate-50 hover:border-twm-orange cursor-pointer" onclick="alert('預覽功能：\\n' + '${h.title}')">
+                                    <div class="text-xs text-slate-400 mb-1">${new Date(h.modifiedAt).toLocaleString()}</div>
+                                    <div class="text-sm font-bold text-slate-700 mb-1">修訂者: ${h.modifiedBy}</div>
+                                    <button onclick="restoreVersion('${h.id}')" class="text-xs text-twm-orange hover:underline">還原此版本</button>
+                                </div>
+                            `).join('')}
+                            ${historyCount === 0 ? '<div class="text-sm text-slate-400 text-center">尚無修訂紀錄</div>' : ''}
+                        </div>
+                    </div>
                 </div>
             `;
+        }
+        
+        function toggleHistoryPanel() {
+            const panel = document.getElementById('history-panel');
+            panel.classList.toggle('hidden');
+            panel.classList.toggle('flex');
+        }
+
+        function restoreVersion(historyId) {
+            if(!confirm('確定要還原至此版本嗎？目前內容將會被覆蓋並存為新版本。')) return;
+            const historyItem = store.history.find(h => h.id === historyId);
+            if(historyItem) {
+                const docIdx = store.docs.findIndex(d => d.id === historyItem.docId);
+                // Save current as history before restore
+                const currentDoc = store.docs[docIdx];
+                 store.history.push({
+                    id: 'h' + Date.now(),
+                    docId: currentDoc.id,
+                    title: currentDoc.title,
+                    content: currentDoc.content,
+                    modifiedBy: store.currentUser.name,
+                    modifiedAt: new Date().toISOString()
+                });
+
+                // Restore
+                store.docs[docIdx] = {
+                    ...store.docs[docIdx],
+                    title: historyItem.title,
+                    content: historyItem.content,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: store.currentUser.name
+                };
+                saveToStorage();
+                render(); // Re-render to update view
+            }
         }
 
         function renderDocEditor(doc) {
@@ -484,9 +660,10 @@
                         <div>
                              <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">附件 Attachment</label>
                              <button onclick="document.getElementById('file-upload-input').click()" class="w-full text-left px-3 py-2 bg-slate-50 border border-slate-200 border-dashed rounded-lg text-slate-500 hover:text-twm-orange hover:border-twm-orange hover:bg-orange-50 transition-all text-sm flex items-center gap-2">
-                                <i data-lucide="upload" class="w-4 h-4"></i> 點擊上傳檔案
+                                <i data-lucide="upload" class="w-4 h-4"></i> 點擊上傳檔案 (Local Storage)
                              </button>
                              <input type="file" id="file-upload-input" class="hidden" onchange="handleFileUpload(this)">
+                             <p class="text-[10px] text-slate-400 mt-1">注意：檔案將儲存於瀏覽器 Local Storage，不會上傳至伺服器。</p>
                         </div>
                     </div>
 
@@ -545,7 +722,8 @@
                     category: store.filterCategory,
                     tags: ['Upload'],
                     attachments: [att],
-                    updatedAt: new Date().toISOString()
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: store.currentUser.name
                 };
                 store.docs.unshift(newDoc);
                 saveToStorage();
@@ -582,13 +760,29 @@
 
             if (!title) return alert('請輸入標題');
 
+            // --- VERSION CONTROL: Save History if editing existing doc ---
+            if (id) {
+                const oldDoc = store.docs.find(d => d.id === id);
+                if (oldDoc) {
+                    store.history.push({
+                        id: 'h' + Date.now(),
+                        docId: oldDoc.id,
+                        title: oldDoc.title,
+                        content: oldDoc.content,
+                        modifiedBy: store.currentUser.name,
+                        modifiedAt: new Date().toISOString()
+                    });
+                }
+            }
+
             const docData = {
                 ...window.currentEditDoc,
                 id: id || 'd' + Date.now(),
                 title,
                 content,
                 category,
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                updatedBy: store.currentUser.name
             };
 
             if (id) {
@@ -739,11 +933,79 @@
             render();
         }
 
+        // --- USER MANAGER ---
+        function renderUserManager() {
+             return `
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center mb-8">
+                        <h1 class="text-3xl font-bold text-slate-800">帳號管理</h1>
+                        <button onclick="addUser()" class="btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-orange-200">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i> 新增使用者
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                        <table class="w-full text-sm text-left text-slate-600">
+                            <thead class="text-xs text-slate-400 uppercase bg-slate-50 border-b border-slate-100">
+                                <tr>
+                                    <th class="px-6 py-4">姓名</th>
+                                    <th class="px-6 py-4">帳號</th>
+                                    <th class="px-6 py-4">密碼</th>
+                                    <th class="px-6 py-4">角色</th>
+                                    <th class="px-6 py-4">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${store.users.map(u => `
+                                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                                        <td class="px-6 py-4 font-bold text-slate-800">${u.name}</td>
+                                        <td class="px-6 py-4">${u.username}</td>
+                                        <td class="px-6 py-4 font-mono text-xs">******</td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-2 py-1 rounded text-xs font-bold ${u.role === 'ADMIN' ? 'bg-orange-100 text-twm-orange' : 'bg-slate-100 text-slate-500'}">${u.role}</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            ${u.username !== 'admin' ? 
+                                            `<button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600 font-medium">刪除</button>` : 
+                                            '<span class="text-slate-300">系統保護</span>'}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function addUser() {
+            const name = prompt("輸入姓名:");
+            const username = prompt("輸入帳號:");
+            const password = prompt("輸入密碼:");
+            const role = prompt("輸入角色 (ADMIN / USER):", "USER");
+            
+            if(name && username && password) {
+                store.users.push({
+                    id: 'u' + Date.now(),
+                    name, username, password, role: role.toUpperCase()
+                });
+                saveToStorage();
+                render();
+            }
+        }
+        
+        function deleteUser(uid) {
+            if(!confirm("確定刪除此使用者?")) return;
+            store.users = store.users.filter(u => u.id !== uid);
+            saveToStorage();
+            render();
+        }
+
         // --- EXCEL DATABASE MANAGER ---
         function renderDatabaseManager() {
             return `
                  <div class="max-w-2xl mx-auto">
-                    <h1 class="text-3xl font-bold mb-8 text-slate-800">資料庫管理</h1>
+                    <h1 class="text-3xl font-bold mb-8 text-slate-800">資料庫與備份</h1>
                     
                     <div class="bg-white rounded-xl border border-slate-200 p-8 shadow-sm mb-6">
                         <div class="flex items-center gap-4 mb-4">
@@ -751,7 +1013,7 @@
                                 <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-slate-800">匯入資料 (Import)</h3>
+                                <h3 class="font-bold text-lg text-slate-800">匯入資料 (Restore)</h3>
                                 <p class="text-sm text-slate-500">從 Excel (.xlsx) 載入資料以覆蓋目前系統。</p>
                             </div>
                         </div>
@@ -766,12 +1028,12 @@
                                 <i data-lucide="download-cloud" class="w-6 h-6"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold text-lg text-slate-800">匯出資料 (Export)</h3>
-                                <p class="text-sm text-slate-500">備份所有文件、專案與任務至 Excel。</p>
+                                <h3 class="font-bold text-lg text-slate-800">匯出資料 (Backup)</h3>
+                                <p class="text-sm text-slate-500">備份所有文件、專案、帳號與版本紀錄至 Excel。</p>
                             </div>
                         </div>
                         <button onclick="exportToExcel()" class="w-full btn-primary px-4 py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-orange-200">
-                             <i data-lucide="download" class="w-4 h-4"></i> 下載備份 (.xlsx)
+                             <i data-lucide="download" class="w-4 h-4"></i> 下載完整備份 (.xlsx)
                         </button>
                     </div>
                 </div>
@@ -804,10 +1066,18 @@
                         tasks: p.tasks ? JSON.parse(p.tasks) : []
                     }));
                 }
+                
+                if (workbook.Sheets['Users']) {
+                    store.users = XLSX.utils.sheet_to_json(workbook.Sheets['Users']);
+                }
+                
+                if (workbook.Sheets['History']) {
+                    store.history = XLSX.utils.sheet_to_json(workbook.Sheets['History']);
+                }
 
                 saveToStorage();
-                alert('資料庫匯入成功！');
-                navigate('dashboard');
+                alert('資料庫匯入成功！請重新登入。');
+                logout();
             };
             reader.readAsArrayBuffer(file);
         });
@@ -815,6 +1085,7 @@
         function exportToExcel() {
             const wb = XLSX.utils.book_new();
             
+            // 1. Docs
             const serializedDocs = store.docs.map(d => ({
                 ...d,
                 tags: JSON.stringify(d.tags),
@@ -823,19 +1094,30 @@
             const wsDocs = XLSX.utils.json_to_sheet(serializedDocs);
             XLSX.utils.book_append_sheet(wb, wsDocs, "Docs");
 
+            // 2. Projects
             const serializedProjects = store.projects.map(p => ({
                 ...p,
                 tasks: JSON.stringify(p.tasks)
             }));
             const wsProjects = XLSX.utils.json_to_sheet(serializedProjects);
             XLSX.utils.book_append_sheet(wb, wsProjects, "Projects");
+            
+            // 3. Users
+            const wsUsers = XLSX.utils.json_to_sheet(store.users);
+            XLSX.utils.book_append_sheet(wb, wsUsers, "Users");
+            
+            // 4. History
+            const wsHistory = XLSX.utils.json_to_sheet(store.history);
+            XLSX.utils.book_append_sheet(wb, wsHistory, "History");
 
-            XLSX.writeFile(wb, `WikiFlow_Backup_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.writeFile(wb, `CDC_Backup_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
         function saveToStorage() {
             localStorage.setItem('wf_docs', JSON.stringify(store.docs));
             localStorage.setItem('wf_projects', JSON.stringify(store.projects));
+            localStorage.setItem('wf_users', JSON.stringify(store.users));
+            localStorage.setItem('wf_history', JSON.stringify(store.history));
         }
 
         // Start
