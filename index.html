@@ -79,7 +79,7 @@
                 <h1 class="text-2xl font-bold text-slate-800">雲端資料中心部</h1>
                 <p class="text-slate-500 text-sm mt-1">知識與專案管理系統</p>
                 <div class="mt-2 px-3 py-1 bg-slate-100 rounded text-[10px] text-slate-500 font-bold border border-slate-200">
-                    <i data-lucide="hard-drive" class="w-3 h-3 inline mr-1"></i> 本機離線模式 (Local Mode)
+                    <i data-lucide="hard-drive" class="w-3 h-3 inline mr-1"></i> 本機離線模式 (C槽儲存)
                 </div>
             </div>
             
@@ -97,7 +97,7 @@
             </form>
         </div>
         <div class="mt-8 text-slate-400 text-xs text-center">
-            <p>資料安全宣告：所有數據僅儲存於本機瀏覽器與 Excel 備份檔中。</p>
+            <p>資料安全宣告：所有數據僅儲存於本機電腦硬碟 (C槽) 與 Excel 備份檔中。</p>
             <p>© 2025 CDC System. All rights reserved.</p>
         </div>
     </div>
@@ -405,7 +405,7 @@
                         <div>
                             <h3 class="font-bold text-twm-orange text-sm">資安與儲存宣告 (Local Storage Only)</h3>
                             <p class="text-sm text-slate-600 mt-1">
-                                本系統運作於「本機離線模式」。您上傳的機房維運、ISMS 表單及各類文件檔案，**僅儲存於您目前的電腦硬碟 (瀏覽器快取)**。
+                                本系統運作於「本機離線模式」。您上傳的機房維運、ISMS 表單及各類文件檔案，**僅儲存於您目前的電腦硬碟 C 槽 (瀏覽器快取)**。
                                 本介面僅提供檔名索引與統計數據展示，不會將實體檔案上傳至任何雲端伺服器。請務必定期至「資料庫管理」執行 Excel 匯出備份。
                             </p>
                         </div>
@@ -467,7 +467,7 @@
                                     <span class="text-sm font-medium text-slate-600 group-hover:text-twm-orange">上傳 ISMS 表單</span>
                                 </button>
                             </div>
-                            <p class="text-[10px] text-slate-400 mt-4 text-center">所有上傳動作僅將檔案編碼存入本機緩存，請安心使用。</p>
+                            <p class="text-[10px] text-slate-400 mt-4 text-center">所有上傳動作僅將檔案編碼存入本機緩存 (C 槽)，請安心使用。</p>
                         </div>
                     </div>
                 </div>
@@ -508,7 +508,7 @@
                         `<div class="text-center py-20 bg-white rounded-xl border border-slate-200 border-dashed">
                             <div class="inline-flex p-4 bg-slate-50 rounded-full mb-4"><i data-lucide="folder-open" class="w-8 h-8 text-slate-400"></i></div>
                             <p class="text-slate-500">此分類尚無文件</p>
-                            <button onclick="triggerQuickUpload('${store.filterCategory}')" class="text-twm-orange hover:underline text-sm font-bold mt-2">立即上傳至本機</button>
+                            <button onclick="triggerQuickUpload('${store.filterCategory}')" class="text-twm-orange hover:underline text-sm font-bold mt-2">立即上傳至本機硬碟</button>
                         </div>` 
                     : 
                         `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -681,7 +681,7 @@
                                 <i data-lucide="upload" class="w-4 h-4"></i> 點擊上傳檔案 (Local Only)
                              </button>
                              <input type="file" id="file-upload-input" class="hidden" onchange="handleFileUpload(this)">
-                             <p class="text-[10px] text-red-500 font-bold mt-1">注意：檔案僅儲存於個人電腦瀏覽器，請勿上傳機密個資。</p>
+                             <p class="text-[10px] text-red-500 font-bold mt-1">注意：檔案僅儲存於個人電腦 C 槽，請勿上傳機密個資。</p>
                         </div>
                     </div>
 
@@ -1065,12 +1065,12 @@
                             <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
                                 <div class="text-xs font-bold text-slate-400 uppercase mb-2">Step 1</div>
                                 <div class="font-bold text-slate-800 mb-1">系統啟動</div>
-                                <p class="text-xs text-slate-500">開啟瀏覽器，系統自動讀取上次快取資料 (Local Cache)。</p>
+                                <p class="text-xs text-slate-500">開啟瀏覽器，系統自動讀取上次快取資料 (C槽 Local Cache)。</p>
                             </div>
                              <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
                                 <div class="text-xs font-bold text-slate-400 uppercase mb-2">Step 2</div>
                                 <div class="font-bold text-slate-800 mb-1">資料操作</div>
-                                <p class="text-xs text-slate-500">上傳文件、管理專案。所有檔案僅存於您的瀏覽器中。</p>
+                                <p class="text-xs text-slate-500">上傳文件、管理專案。所有檔案僅存於您的電腦硬碟中。</p>
                             </div>
                              <div class="p-4 bg-orange-50 rounded-lg border border-twm-orange/30">
                                 <div class="text-xs font-bold text-twm-orange uppercase mb-2">Step 3 (重要)</div>
