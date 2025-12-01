@@ -3,7 +3,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>雲端資料中心部</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -64,13 +64,18 @@
         .login-bg {
             background: linear-gradient(135deg, #FFF0E5 0%, #FFFFFF 100%);
         }
+
+        /* Mobile Sidebar Transition */
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="text-slate-800 h-screen overflow-hidden selection:bg-orange-100 bg-[#F8F9FA]">
 
     <!-- Login Screen -->
     <div id="login-screen" class="fixed inset-0 z-50 login-bg flex flex-col items-center justify-center hidden">
-        <div class="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+        <div class="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-slate-100 mx-4">
             <div class="flex flex-col items-center mb-8">
                 <!-- Logo: Generic Cloud Icon -->
                 <div class="mb-6 p-4 bg-orange-50 rounded-full">
@@ -79,7 +84,7 @@
                 <h1 class="text-2xl font-bold text-slate-800">雲端資料中心部</h1>
                 <p class="text-slate-500 text-sm mt-1">知識與專案管理系統</p>
                 <div class="mt-2 px-3 py-1 bg-slate-100 rounded text-[10px] text-slate-500 font-bold border border-slate-200">
-                    <i data-lucide="hard-drive" class="w-3 h-3 inline mr-1"></i> 本機離線模式 (C槽儲存)
+                    <i data-lucide="hard-drive" class="w-3 h-3 inline mr-1"></i> 本機電腦硬碟 (C槽) 離線模式
                 </div>
             </div>
             
@@ -96,25 +101,36 @@
                 <button type="submit" class="w-full btn-primary py-3 rounded-lg font-bold text-lg shadow-lg shadow-orange-200 mt-2">登入系統</button>
             </form>
         </div>
-        <div class="mt-8 text-slate-400 text-xs text-center">
+        <div class="mt-8 text-slate-400 text-xs text-center px-4">
             <p>資料安全宣告：所有數據僅儲存於本機電腦硬碟 (C槽) 與 Excel 備份檔中。</p>
             <p>© 2025 CDC System. All rights reserved.</p>
         </div>
     </div>
 
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden glass-effect"></div>
+
     <!-- App Container -->
-    <div id="app-container" class="flex h-full hidden">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 shadow-sm z-20" id="sidebar">
+    <div id="app-container" class="flex h-full overflow-hidden relative hidden">
+        
+        <!-- Sidebar (Responsive) -->
+        <!-- Added: fixed positioning for mobile, transform for slide-in -->
+        <aside class="sidebar-transition fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-slate-200 flex flex-col shadow-xl md:shadow-none md:relative md:translate-x-0 -translate-x-full" id="sidebar">
             <!-- Logo Area -->
-            <div class="p-6">
-                <div class="mb-4">
-                    <i data-lucide="cloud" class="w-10 h-10 text-twm-orange"></i>
-                </div>
+            <div class="p-6 flex justify-between items-start">
                 <div>
-                    <div class="font-bold text-lg leading-tight tracking-tight text-slate-800">雲端資料中心部</div>
-                    <div class="text-[10px] text-twm-orange font-bold tracking-widest uppercase">CDC System</div>
+                    <div class="mb-4">
+                        <i data-lucide="cloud" class="w-10 h-10 text-twm-orange"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-lg leading-tight tracking-tight text-slate-800">雲端資料中心部</div>
+                        <div class="text-[10px] text-twm-orange font-bold tracking-widest uppercase">CDC System</div>
+                    </div>
                 </div>
+                <!-- Close button for mobile -->
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-twm-orange">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
             </div>
             
             <nav class="flex-1 overflow-y-auto px-4 space-y-2 mt-4">
@@ -162,28 +178,40 @@
                         <div class="text-sm font-bold text-slate-700 truncate" id="user-name">Guest</div>
                         <div class="text-xs text-slate-500 truncate" id="user-role">Not Logged In</div>
                     </div>
-                    <button onclick="logout()" class="text-slate-400 hover:text-twm-orange"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+                    <button onclick="logout()" class="text-slate-400 hover:text-twm-orange" title="登出"><i data-lucide="log-out" class="w-4 h-4"></i></button>
                 </div>
             </div>
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 flex flex-col h-full bg-[#F8F9FA] relative overflow-hidden">
+        <!-- Added w-full to ensure it takes full width -->
+        <main class="flex-1 flex flex-col h-full bg-[#F8F9FA] relative w-full overflow-hidden">
             <!-- Top Bar -->
-            <header class="h-16 flex items-center px-8 justify-between shrink-0 bg-white/80 backdrop-blur border-b border-slate-200 z-10 sticky top-0">
-                <div class="flex items-center gap-2 text-sm text-slate-500 font-medium" id="breadcrumbs">
-                    <!-- Breadcrumbs injected by JS -->
-                </div>
+            <header class="h-16 flex items-center px-4 md:px-8 justify-between shrink-0 bg-white/80 backdrop-blur border-b border-slate-200 z-10 sticky top-0">
                 <div class="flex items-center gap-4">
-                    <div class="relative">
+                    <!-- Hamburger Menu for Mobile -->
+                    <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-twm-orange">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    
+                    <div class="flex items-center gap-2 text-sm text-slate-500 font-medium overflow-hidden whitespace-nowrap text-ellipsis max-w-[150px] md:max-w-none" id="breadcrumbs">
+                        <!-- Breadcrumbs injected by JS -->
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="relative hidden md:block">
                          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
                          <input type="text" placeholder="搜尋文件..." class="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-twm-orange focus:bg-white transition-all w-64">
+                    </div>
+                     <div class="md:hidden">
+                        <i data-lucide="search" class="w-5 h-5 text-slate-500"></i>
                     </div>
                 </div>
             </header>
 
             <!-- Content Scroll Area -->
-            <div id="app-content" class="flex-1 overflow-y-auto overflow-x-hidden p-8">
+            <div id="app-content" class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8">
                 <!-- Content Injected Here -->
             </div>
         </main>
@@ -224,9 +252,10 @@
             }
         ];
 
+        // Added sessionToken to mock data
         const MOCK_USERS = [
-            { id: 'u1', username: 'admin', password: 'admin', name: '系統管理員', role: 'ADMIN' },
-            { id: 'u2', username: 'user', password: 'user', name: '一般職員', role: 'USER' }
+            { id: 'u1', username: 'admin', password: 'admin', name: '系統管理員', role: 'ADMIN', sessionToken: '' },
+            { id: 'u2', username: 'user', password: 'user', name: '一般職員', role: 'USER', sessionToken: '' }
         ];
 
         // --- INIT ---
@@ -246,13 +275,30 @@
             const sessionUser = sessionStorage.getItem('wf_session');
             if (sessionUser) {
                 store.currentUser = JSON.parse(sessionUser);
+                startSessionMonitor(); // Start heartbeat check
                 showApp();
             } else {
                 showLogin();
             }
         }
 
-        // --- AUTH ---
+        // --- UI HELPERS ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                // Open
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                // Close
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // --- AUTH & SINGLE SESSION LOGIC ---
         function showLogin() {
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('app-container').classList.add('hidden');
@@ -282,21 +328,75 @@
             const u = document.getElementById('login-username').value;
             const p = document.getElementById('login-password').value;
             
-            const user = store.users.find(user => user.username === u && user.password === p);
+            // Reload users from storage to ensure we have latest data before login
+            const freshUsersStr = localStorage.getItem('wf_users');
+            if (freshUsersStr) store.users = JSON.parse(freshUsersStr);
+
+            const userIndex = store.users.findIndex(user => user.username === u && user.password === p);
             
-            if (user) {
+            if (userIndex !== -1) {
+                const user = store.users[userIndex];
+                
+                // SINGLE SESSION LOGIC: Generate new token
+                const newToken = Date.now().toString() + Math.random().toString().slice(2,5);
+                
+                // 1. Update user in store with new token
+                store.users[userIndex].sessionToken = newToken;
+                user.sessionToken = newToken;
+                
+                // 2. Save store to localStorage (Kick out other sessions)
+                saveToStorage();
+
+                // 3. Save token to current tab's sessionStorage
                 store.currentUser = user;
                 sessionStorage.setItem('wf_session', JSON.stringify(user));
+                sessionStorage.setItem('wf_token', newToken);
+
                 document.getElementById('login-error').classList.add('hidden');
+                
+                startSessionMonitor();
                 showApp();
             } else {
                 document.getElementById('login-error').classList.remove('hidden');
             }
         }
 
-        function logout() {
+        let sessionInterval = null;
+        
+        function startSessionMonitor() {
+            if (sessionInterval) clearInterval(sessionInterval);
+            
+            sessionInterval = setInterval(() => {
+                if (!store.currentUser) return;
+                
+                // Check if the token in localStorage matches our session token
+                const freshUsersStr = localStorage.getItem('wf_users');
+                if (!freshUsersStr) return;
+                
+                const freshUsers = JSON.parse(freshUsersStr);
+                const freshUser = freshUsers.find(u => u.id === store.currentUser.id);
+                
+                const myToken = sessionStorage.getItem('wf_token');
+                
+                // If user exists in DB but token doesn't match my local token -> Kicked
+                if (freshUser && freshUser.sessionToken && freshUser.sessionToken !== myToken) {
+                    clearInterval(sessionInterval);
+                    alert("偵測到此帳號已在其他裝置或視窗登入。\n\n基於安全考量，本連線將中斷。");
+                    logout(true);
+                }
+            }, 3000); // Check every 3 seconds
+        }
+
+        function logout(force = false) {
             sessionStorage.removeItem('wf_session');
+            sessionStorage.removeItem('wf_token');
             store.currentUser = null;
+            if (sessionInterval) clearInterval(sessionInterval);
+            
+            // Reset View
+            if (!force) {
+                // Regular logout (optional: clear token in DB? No, keep it to prevent confusion)
+            }
             showLogin();
         }
 
@@ -309,6 +409,12 @@
                 store.selectedId = null;
             } else {
                 store.selectedId = param;
+            }
+
+            // Close sidebar on mobile navigation
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('sidebar-overlay').classList.add('hidden');
             }
 
             render();
@@ -391,11 +497,11 @@
                 <div class="max-w-6xl mx-auto space-y-8" id="dashboard-content">
                     <div class="flex justify-between items-end">
                         <div>
-                            <h1 class="text-3xl font-bold text-slate-800">早安，${store.currentUser.name}</h1>
-                            <p class="text-slate-500 mt-1">Life is for connecting. 今天的系統概況如下：</p>
+                            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">早安，${store.currentUser.name}</h1>
+                            <p class="text-slate-500 mt-1 text-sm md:text-base">Life is for connecting. 今天的系統概況如下：</p>
                         </div>
                         <button onclick="downloadChart()" class="text-sm text-slate-400 hover:text-twm-orange flex items-center gap-1">
-                            <i data-lucide="camera" class="w-4 h-4"></i> 匯出報表
+                            <i data-lucide="camera" class="w-4 h-4"></i> <span class="hidden md:inline">匯出報表</span>
                         </button>
                     </div>
 
@@ -404,14 +510,14 @@
                         <i data-lucide="shield-alert" class="w-6 h-6 text-twm-orange shrink-0 mt-0.5"></i>
                         <div>
                             <h3 class="font-bold text-twm-orange text-sm">資安與儲存宣告 (Local Storage Only)</h3>
-                            <p class="text-sm text-slate-600 mt-1">
+                            <p class="text-sm text-slate-600 mt-1 leading-relaxed">
                                 本系統運作於「本機離線模式」。您上傳的機房維運、ISMS 表單及各類文件檔案，**僅儲存於您目前的電腦硬碟 C 槽 (瀏覽器快取)**。
                                 本介面僅提供檔名索引與統計數據展示，不會將實體檔案上傳至任何雲端伺服器。請務必定期至「資料庫管理」執行 Excel 匯出備份。
                             </p>
                         </div>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                         <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all border-t-4 border-t-twm-orange cursor-pointer" onclick="navigate('documents', 'all')">
                             <div class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">文件總數</div>
                             <div class="text-4xl font-bold text-slate-800">${store.docs.length}</div>
@@ -430,7 +536,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
                             <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-700">
                                 <i data-lucide="clock" class="w-5 h-5 text-twm-orange"></i> 最近更新文件
@@ -443,11 +549,11 @@
                                                 <i data-lucide="file" class="w-4 h-4"></i>
                                             </div>
                                             <div>
-                                                <div class="font-bold text-sm text-slate-700 group-hover:text-twm-orange">${doc.title}</div>
+                                                <div class="font-bold text-sm text-slate-700 group-hover:text-twm-orange line-clamp-1">${doc.title}</div>
                                                 <div class="text-xs text-slate-400">${doc.category}</div>
                                             </div>
                                         </div>
-                                        <span class="text-xs text-slate-400">${new Date(doc.updatedAt).toLocaleDateString()}</span>
+                                        <span class="text-xs text-slate-400 hidden sm:block">${new Date(doc.updatedAt).toLocaleDateString()}</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -483,21 +589,21 @@
                 <div class="max-w-6xl mx-auto">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                         <div>
-                            <h1 class="text-3xl font-bold text-slate-800">${store.filterCategory === 'all' ? '文件庫' : store.filterCategory}</h1>
+                            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">${store.filterCategory === 'all' ? '文件庫' : store.filterCategory}</h1>
                             <p class="text-slate-500 text-sm mt-1">共 ${filteredDocs.length} 份文件 (Local Database)</p>
                         </div>
-                        <div class="flex gap-3">
-                            <button onclick="triggerQuickUpload('${store.filterCategory}')" class="bg-white border border-slate-300 hover:border-twm-orange hover:text-twm-orange text-slate-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
+                        <div class="flex gap-3 w-full md:w-auto">
+                            <button onclick="triggerQuickUpload('${store.filterCategory}')" class="flex-1 md:flex-none justify-center bg-white border border-slate-300 hover:border-twm-orange hover:text-twm-orange text-slate-700 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-all">
                                 <i data-lucide="upload" class="w-4 h-4"></i> 上傳檔案
                             </button>
-                            <button onclick="navigate('doc-edit')" class="btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-orange-200">
+                            <button onclick="navigate('doc-edit')" class="flex-1 md:flex-none justify-center btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-orange-200">
                                 <i data-lucide="plus" class="w-4 h-4"></i> 新增文件
                             </button>
                         </div>
                     </div>
 
                     <!-- Category Tabs -->
-                    <div class="flex gap-1 mb-6 border-b border-slate-200 overflow-x-auto">
+                    <div class="flex gap-1 mb-6 border-b border-slate-200 overflow-x-auto pb-1 no-scrollbar">
                         <button onclick="navigate('documents', 'all')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${store.filterCategory === 'all' ? 'border-twm-orange text-twm-orange' : 'border-transparent text-slate-500 hover:text-slate-700'}">全部文件</button>
                         <button onclick="navigate('documents', '機房維運')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${store.filterCategory === '機房維運' ? 'border-twm-orange text-twm-orange' : 'border-transparent text-slate-500 hover:text-slate-700'}">機房維運</button>
                         <button onclick="navigate('documents', 'ISMS')" class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${store.filterCategory === 'ISMS' ? 'border-twm-orange text-twm-orange' : 'border-transparent text-slate-500 hover:text-slate-700'}">ISMS 資安</button>
@@ -534,29 +640,29 @@
             const historyCount = store.history.filter(h => h.docId === doc.id).length;
 
             return `
-                <div class="flex gap-6 h-full">
+                <div class="flex flex-col md:flex-row gap-6 h-full">
                     <div class="flex-1 overflow-y-auto">
-                        <div class="max-w-4xl mx-auto bg-white p-10 rounded-xl shadow-sm border border-slate-200 min-h-[80vh]">
+                        <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-sm border border-slate-200 min-h-[80vh]">
                             <div class="mb-8 border-b border-slate-100 pb-6">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div class="flex items-center gap-2 text-sm">
+                                <div class="flex flex-col md:flex-row justify-between items-start mb-4 gap-4">
+                                    <div class="flex items-center gap-2 text-sm flex-wrap">
                                         <span class="px-2.5 py-0.5 bg-twm-orange text-white rounded text-xs font-bold">${doc.category}</span>
                                         <span class="text-slate-400">•</span>
-                                        <span class="text-slate-400">Updated ${new Date(doc.updatedAt).toLocaleString()} by ${doc.updatedBy || 'Unknown'}</span>
+                                        <span class="text-slate-400 text-xs">Updated ${new Date(doc.updatedAt).toLocaleString()} by ${doc.updatedBy || 'Unknown'}</span>
                                     </div>
-                                    <div class="flex gap-2">
-                                        <button onclick="toggleHistoryPanel()" class="text-sm text-slate-500 hover:text-twm-orange flex items-center gap-1 px-3 py-1 rounded hover:bg-orange-50 transition-colors">
+                                    <div class="flex gap-2 w-full md:w-auto">
+                                        <button onclick="toggleHistoryPanel()" class="flex-1 md:flex-none justify-center text-sm text-slate-500 hover:text-twm-orange flex items-center gap-1 px-3 py-1 rounded hover:bg-orange-50 transition-colors border border-slate-200 md:border-transparent">
                                             <i data-lucide="history" class="w-4 h-4"></i> 版本 (${historyCount})
                                         </button>
-                                        <button onclick="navigate('doc-edit', '${doc.id}')" class="text-sm text-slate-500 hover:text-twm-orange flex items-center gap-1 px-3 py-1 rounded hover:bg-orange-50 transition-colors">
+                                        <button onclick="navigate('doc-edit', '${doc.id}')" class="flex-1 md:flex-none justify-center text-sm text-slate-500 hover:text-twm-orange flex items-center gap-1 px-3 py-1 rounded hover:bg-orange-50 transition-colors border border-slate-200 md:border-transparent">
                                             <i data-lucide="edit-3" class="w-4 h-4"></i> 編輯
                                         </button>
                                     </div>
                                 </div>
-                                <h1 class="text-4xl font-bold text-slate-900 leading-tight">${doc.title}</h1>
+                                <h1 class="text-2xl md:text-4xl font-bold text-slate-900 leading-tight">${doc.title}</h1>
                             </div>
                             
-                            <article class="prose prose-slate max-w-none prose-headings:font-bold prose-a:text-twm-orange">
+                            <article class="prose prose-slate max-w-none prose-headings:font-bold prose-a:text-twm-orange prose-img:rounded-lg">
                                 ${htmlContent}
                             </article>
 
@@ -572,7 +678,7 @@
                                                     <div class="bg-white p-2 rounded shadow-sm text-twm-orange">
                                                         <i data-lucide="file" class="w-5 h-5"></i>
                                                     </div>
-                                                    <div>
+                                                    <div class="min-w-0">
                                                         <div class="truncate text-sm font-bold text-slate-700 group-hover:text-twm-orange">${att.name}</div>
                                                         <div class="text-xs text-slate-400">${Math.round(att.size/1024)} KB</div>
                                                     </div>
@@ -589,8 +695,8 @@
                     </div>
 
                     <!-- History Panel (Hidden by default) -->
-                    <div id="history-panel" class="w-80 bg-white border-l border-slate-200 p-6 hidden flex-col shadow-lg">
-                        <div class="flex justify-between items-center mb-6">
+                    <div id="history-panel" class="fixed md:static inset-0 z-50 md:z-auto bg-white md:w-80 border-l border-slate-200 p-6 hidden flex-col shadow-lg">
+                         <div class="flex justify-between items-center mb-6">
                             <h3 class="font-bold text-lg text-slate-800">版本紀錄</h3>
                             <button onclick="toggleHistoryPanel()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
@@ -611,8 +717,13 @@
         
         function toggleHistoryPanel() {
             const panel = document.getElementById('history-panel');
-            panel.classList.toggle('hidden');
-            panel.classList.toggle('flex');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                panel.classList.add('flex');
+            } else {
+                panel.classList.add('hidden');
+                panel.classList.remove('flex');
+            }
         }
 
         function restoreVersion(historyId) {
@@ -652,20 +763,20 @@
             window.currentEditDoc = JSON.parse(JSON.stringify(data)); 
 
             return `
-                <div class="max-w-4xl mx-auto bg-white p-10 rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
-                    <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
+                <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-sm border border-slate-200 h-full flex flex-col">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-slate-100 gap-4">
                         <h2 class="text-xl font-bold text-slate-400 flex items-center gap-2">
                              ${isNew ? '<i data-lucide="file-plus" class="w-5 h-5"></i> 新增文件' : '<i data-lucide="edit" class="w-5 h-5"></i> 編輯文件'}
                         </h2>
-                        <div class="flex gap-3">
-                            <button onclick="navigate('${isNew ? 'documents' : 'doc-view'}', '${isNew ? store.filterCategory : doc.id}')" class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg font-medium transition-colors">取消</button>
-                            <button onclick="saveDoc('${isNew ? '' : doc.id}')" class="btn-primary px-6 py-2 rounded-lg font-bold shadow-lg shadow-orange-200">儲存文件</button>
+                        <div class="flex gap-3 w-full md:w-auto">
+                            <button onclick="navigate('${isNew ? 'documents' : 'doc-view'}', '${isNew ? store.filterCategory : doc.id}')" class="flex-1 md:flex-none px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg font-medium transition-colors">取消</button>
+                            <button onclick="saveDoc('${isNew ? '' : doc.id}')" class="flex-1 md:flex-none btn-primary px-6 py-2 rounded-lg font-bold shadow-lg shadow-orange-200">儲存文件</button>
                         </div>
                     </div>
 
-                    <input type="text" id="edit-title" value="${data.title}" placeholder="請輸入文件標題..." class="text-3xl font-bold border-none focus:ring-0 px-0 placeholder-slate-300 w-full mb-6 text-slate-800">
+                    <input type="text" id="edit-title" value="${data.title}" placeholder="請輸入文件標題..." class="text-2xl md:text-3xl font-bold border-none focus:ring-0 px-0 placeholder-slate-300 w-full mb-6 text-slate-800 bg-transparent">
                     
-                    <div class="grid grid-cols-2 gap-6 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <div>
                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">分類 Category</label>
                             <select id="edit-category" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-700 font-medium focus:ring-2 focus:ring-twm-orange focus:border-transparent outline-none">
@@ -886,14 +997,14 @@
                             <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Active</span>
                         </div>
                         <button onclick="addTask('${project.id}')" class="btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm">
-                             <i data-lucide="plus" class="w-4 h-4"></i> 新增任務
+                             <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden md:inline">新增任務</span>
                         </button>
                     </div>
                     
                     <div class="flex-1 overflow-x-auto overflow-y-hidden pb-4">
                         <div class="flex h-full gap-6 w-max">
                             ${statuses.map(status => `
-                                <div class="w-80 flex flex-col bg-slate-100 rounded-xl p-4 border border-slate-200" ondrop="drop(event, '${status}')" ondragover="allowDrop(event)">
+                                <div class="w-72 md:w-80 flex flex-col bg-slate-100 rounded-xl p-4 border border-slate-200" ondrop="drop(event, '${status}')" ondragover="allowDrop(event)">
                                     <div class="flex justify-between items-center mb-4 px-1">
                                         <span class="text-sm font-bold text-slate-600 uppercase tracking-wide flex items-center gap-2">
                                             <span class="w-2 h-2 rounded-full ${status === 'Done' ? 'bg-green-500' : (status === 'In Progress' ? 'bg-twm-orange' : 'bg-slate-400')}"></span>
@@ -956,14 +1067,14 @@
              return `
                 <div class="max-w-4xl mx-auto">
                     <div class="flex justify-between items-center mb-8">
-                        <h1 class="text-3xl font-bold text-slate-800">帳號管理</h1>
+                        <h1 class="text-2xl md:text-3xl font-bold text-slate-800">帳號管理</h1>
                         <button onclick="addUser()" class="btn-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-orange-200">
-                            <i data-lucide="user-plus" class="w-4 h-4"></i> 新增使用者
+                            <i data-lucide="user-plus" class="w-4 h-4"></i> <span class="hidden md:inline">新增使用者</span>
                         </button>
                     </div>
 
-                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                        <table class="w-full text-sm text-left text-slate-600">
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-600 min-w-[600px]">
                             <thead class="text-xs text-slate-400 uppercase bg-slate-50 border-b border-slate-100">
                                 <tr>
                                     <th class="px-6 py-4">姓名</th>
@@ -1012,7 +1123,7 @@
             if(name && username && password) {
                 store.users.push({
                     id: 'u' + Date.now(),
-                    name, username, password, role: role.toUpperCase()
+                    name, username, password, role: role.toUpperCase(), sessionToken: ''
                 });
                 saveToStorage();
                 render();
@@ -1031,8 +1142,7 @@
             const newPass = prompt(`修改 ${user.username} 的密碼 (若不修改請留空):`);
             if (newPass !== null && newPass.trim() !== "") user.password = newPass;
 
-            // Role (Prevent changing admin role to user via simple prompt to avoid lock-out, or allow it)
-            // For simplicity and safety, we allow changing roles for non-admin accounts.
+            // Role
             if (user.username !== 'admin') {
                 const newRole = prompt(`修改 ${user.username} 的角色 (ADMIN / USER):`, user.role);
                 if (newRole !== null && newRole.trim() !== "") user.role = newRole.toUpperCase();
@@ -1054,14 +1164,14 @@
         function renderDatabaseManager() {
             return `
                  <div class="max-w-4xl mx-auto">
-                    <h1 class="text-3xl font-bold mb-8 text-slate-800">資料庫與備份</h1>
+                    <h1 class="text-2xl md:text-3xl font-bold mb-8 text-slate-800">資料庫與備份</h1>
                     
                     <!-- SOP Guide -->
-                    <div class="bg-white rounded-xl border border-slate-200 p-8 shadow-sm mb-8">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 md:p-8 shadow-sm mb-8">
                         <h3 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
                              <i data-lucide="book-open" class="w-5 h-5 text-twm-orange"></i> 資料維運標準作業程序 (SOP)
                         </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
                                 <div class="text-xs font-bold text-slate-400 uppercase mb-2">Step 1</div>
                                 <div class="font-bold text-slate-800 mb-1">系統啟動</div>
